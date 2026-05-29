@@ -3,5 +3,8 @@
   "packageManager": "yarn@4.9.1",
   "scripts": {
     "mongo": "docker run --rm -v $INIT_CWD/database:/data/db -p 27017:27017 mongo"
+  },
+  "dependencies": {
+    "mongoose": "^9.6.3"
   }
 }
