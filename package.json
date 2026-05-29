@@ -1,4 +1,7 @@
 {
   "name": "medinfo_sose_26",
-  "packageManager": "yarn@4.9.1"
+  "packageManager": "yarn@4.9.1",
+  "scripts": {
+    "mongo": "docker run --rm -v $INIT_CWD/database:/data/db -p 27017:27017 mongo"
+  }
 }
