@@ -1,4 +1,6 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose')  
+// MongoDB hat selber kein Schema
+// Schemata werden durch mongoose, den Treiber, gestellt
 
 const patientSchema = new mongoose.Schema({
     id: String,  // "131896579"
