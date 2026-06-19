@@ -1,0 +1,26 @@
+{
+    id: "131896579",
+    name: [
+        {
+            use: "official", 
+            family: "Ramirez", 
+            given: [
+                "Carlos"
+            ] 
+        }
+    ],
+    gender: "male",
+    birthDate: "1974-05-12",
+    address: [
+        {
+            use: "home",
+            line: [
+                "125 Community Way"
+            ],
+            city: "Springfield",
+            state: "MA",
+            postalCode: "01109",
+            country: "US"
+        }
+    ]
+}

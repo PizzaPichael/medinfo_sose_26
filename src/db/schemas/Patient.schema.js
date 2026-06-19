@@ -1,8 +1,13 @@
-const mongoose = require('mongoose')  
+import mongoose from 'mongoose'
 // MongoDB hat selber kein Schema
 // Schemata werden durch mongoose, den Treiber, gestellt
 
 const patientSchema = new mongoose.Schema({
+    patientId: {
+      type: String,
+      required: true,
+      index: true
+    },
     id: String,  // "131896579"
     name: [
         {
@@ -26,9 +31,11 @@ const patientSchema = new mongoose.Schema({
             postalCode: String, // "01109"
             country: String // "US"
           }
-        ]
-
+        ],
+    timestamp: { type: Date, default: Date.now } // Konfigurationsobjekt ermöglicht mehr Anpassungen für Schemas
 
 })
 
-export default patientSchema
+
+
+export default mongoose.model('Patient', patientSchema)

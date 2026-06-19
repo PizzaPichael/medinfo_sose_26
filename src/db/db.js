@@ -1,7 +1,5 @@
-const mongoose = require('mongoose')
-const patientSchema = require('./schemas/Patient.schema')
-
-const Patient = mongoose.model('Patient', patientSchema)
+import mongoose from 'mongoose'
+import Patient from './schemas/Patient.schema.js'
 
 class DataBase {
     constructor(url) {
@@ -9,11 +7,11 @@ class DataBase {
         console.log('[DB] Connected...')
     }
 
-    connect = async (url) => {
+    connect = async () => {
         try {
-            await mongoose.connect(url)
-        } catch {
-            console.log('[DB] Connected...');
+            await mongoose.connect(this.url)
+        } catch (e) {
+            console.log('[DB] Connected...', e);
         }
     }
 
@@ -24,11 +22,11 @@ class DataBase {
     
     addPatient = async (schemaInstance) => {
         try {
-            patient = new Patient(schemaInstance)
+            const patient = new Patient(schemaInstance)
             await patient.save()
             console.log('[DB] Patient created...')
-        } catch {
-            console.log('[DB] Something went wrong creating a patient...')
+        } catch (e){
+            console.log('[DB] Something went wrong creating a patient...', e)
         }
     }
 
@@ -36,8 +34,8 @@ class DataBase {
         try {
             return await Patient.find()
         }
-        catch {
-            console.log('[DB] Error getting all patients...')
+        catch (e) {
+            console.log('[DB] Error getting all patients...', e)
         }
     }
 
@@ -45,8 +43,8 @@ class DataBase {
         try {
             return await Patient.find(filter)  // z.B. { gender: 'male' }
         } 
-        catch {
-            console.log('[DB] Error getting patient by fitler...')
+        catch (e){
+            console.log('[DB] Error getting patient by filter...', e)
         }
     }
 
@@ -54,10 +52,25 @@ class DataBase {
         try {
             return await Patient.findById(id)  // z.B. '652f...'
         }
-        catch {
-            console.log('[DB] Error getting patient by db id...')
+        catch (e){
+            console.log('[DB] Error getting patient by db id...', e)
+        }
+    }
+updatePatientById
+    updatePatientById = async (id, patientSchemaInstance) => {
+        try {
+           const result = await Patient.updateOne(
+                { id: id },
+                { $set: patientSchemaInstance }
+            )
+            if(result.matchedCount === 0) {
+                console.log('[DB] No patient with this id found...')
+            }
+            return result
+        } catch (e) {
+            console.log('[DB] Error updating patient by id...', e)
         }
     }
 }
 
-module.exports = DataBase;
+export default DataBase
