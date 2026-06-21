@@ -63,14 +63,14 @@ Umsetzende: Joh
 
 ### Aufgaben vom 19.06. - Bis nächstes mal 26.06.
 
-- das Transaktionsdiagramm erstellen für jede Transaktion
-- die FHIR Endpoints für jede Transaktion auflisten
+- das Transaktionsdiagramm erstellen für jede Transaktion 
+- die FHIR Endpoints für jede Transaktion auflisten 
 - Notwendige interne Funktionen umschreiben (Was soll die Funktion machen, z.B. Datenbankzugriff)
 - Schemata für unsere Resources definieren (and FHIR orientieren)
     Resourcen:
-    - Patient (Micha)               DONE
-    - Condition (Micha)             DONE
-    - MedicationStatement (Micha)   DONE
+    - Patient (Micha)    
+    - Condition (Micha)  
+    - MedicationStatement (Micha)
     - Consent (Joh)
     - Encounter (Joh)
     - Procedure (Joh)
