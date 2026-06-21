@@ -1,15 +1,44 @@
 # Planungsdokument
-## Gruppe
+**Gruppe**
+
 Slice C — Behandlungsdokumentation & Prozeduren
 
-## Mitglieder
-X
-Y
+**Mitglieder**
+Joh
+Micha
 
-## Modul
+**Modul**
 Medizinische Informationssysteme
 
-## Entscheidungen zum Aufbau der Systemarchitektur
+## 01 Vorgaben
+
+### Bei jedem Vorgang
+
+**Rolle**: Notaufnahme-Software (KIS-Modul)
+
+**Touchpoint**: Patient:in wird aufgenommen, Anamnesebogen wird erfasst.
+
+FHIR-Operationen:
+- **/Patient** Sucher oder Neuanlage
+- **/Patient** Suche per Krankenversichertennummer
+- **/Bundle** (transaction) Patient + Condition (Vorerkrankungen) + MedicationStatement (Dauermedikamente) + Consent (DSGVO)
+- **/AuditEvent**
+- **/Provenance**
+
+### Slice C — Behandlungsdokumentation & Prozeduren
+
+**Rolle**: Stationsmodul / Pflegedokumentation
+
+**Touchpoint**: Gipsanlage wird dokumentiert, Encounter wird laufend aktualisiert.
+
+FHIR-Operationen:
+- **/Patient**?...
+- **/Encounter/{id}** — Encounter-Status und -Details aktualisieren
+- **/Procedure** — Gipsanlage, Reposition
+- **/Bundle** (transaction) — Procedure + aktualisierter Encounter + Provenance
+- **/Encounter/{id}/_history** — Versionsverlauf des Encounters abrufen
+
+## 02 Entscheidungen zum Aufbau der Systemarchitektur
 
 ### Transaktionen
 
@@ -32,8 +61,7 @@ Dass Gips bekommen, wohin in welchen Raum, welche weiteren Maßnahmen getroffen
 Encounter wir mit jedem abgeschlossene Procedure geupdated
 Umsetzende: Joh
 
-
-### Bis nächstes mal
+### Aufgaben vom 19.06. - Bis nächstes mal 26.06.
 
 - das Transaktionsdiagramm erstellen für jede Transaktion
 - die FHIR Endpoints für jede Transaktion auflisten
@@ -50,4 +78,6 @@ Umsetzende: Joh
 ### Fragen and Denny
 - Stellen wir eine API bereit für unseren Service?
 - Oder sind wir eine CLI?
-- 
+- Existieren Bundles über Transaktionen hinaus? Also werden sie als Instanzen in der DB gespeichert? Oder leben sie nur so lange, wie die Transaktion lebt?
+- Werden Provenance Instanzen auch in der AuditDB gespeichert?
+- Dürfen wir auch das Wiki als Planungsdokument angeben?
