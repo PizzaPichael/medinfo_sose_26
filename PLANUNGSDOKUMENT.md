@@ -68,14 +68,14 @@ Umsetzende: Joh
 - Notwendige interne Funktionen umschreiben (Was soll die Funktion machen, z.B. Datenbankzugriff)
 - Schemata für unsere Resources definieren (and FHIR orientieren)
     Resourcen:
-    - Patient (Micha)
-    - Condition (Micha)
-    - MedicationStatement (Micha)
+    - Patient (Micha)               DONE
+    - Condition (Micha)             DONE
+    - MedicationStatement (Micha)   DONE
     - Consent (Joh)
     - Encounter (Joh)
     - Procedure (Joh)
 
-### Fragen and Denny
+### Fragen an Denny
 - Stellen wir eine API bereit für unseren Service?
 - Oder sind wir eine CLI?
 - Existieren Bundles über Transaktionen hinaus? Also werden sie als Instanzen in der DB gespeichert? Oder leben sie nur so lange, wie die Transaktion lebt?
