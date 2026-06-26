@@ -6,6 +6,7 @@
     "mongo": "docker run --rm -v $INIT_CWD/database:/data/db -p 27017:27017 mongo"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "mongoose": "^9.6.3"
   }
 }
