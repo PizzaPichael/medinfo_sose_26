@@ -1,19 +1,5 @@
 import DataBase from './db/db.js'
 import PatientSchema from './db/schemas/Patient.schema.js'
-const express = require('express')
-const app = express()
-const port = 3000
-
-app.use(express.json())
-
-// can be extracted to a different file, currently just a test example
-const handleHelloWorld = (req, res) => {
-    console.log(req.params)
-    console.log(req.query)
-    console.log(req.body)
-
-    res.status(203).json({message: 'Hello World!'})
-}
 
 const main = async () => {
     const url = 'mongodb://localhost:27017/patients'
@@ -21,12 +7,6 @@ const main = async () => {
     // auf diese Portnummer horcht. Dieser ist gemapped auf den realen Port dieser Nummer. 
     const database = new DataBase(url)
     await database.connect()
-    // api path definitions
-    app.get('/test', handleHelloWorld)
-
-    app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`)
-    })
 
     // Do stuff from here...
     const patientSchemaInstance = new PatientSchema({
