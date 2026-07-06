@@ -50,7 +50,8 @@ class Server {
          *                   type: string
          */
         this.app.post('/registerPatient', handler.registerPatient)
-
+        this.app.get('/consent/:patientId', handler.checkConsent)
+        this.app.post('/consent', handler.createConsent)
         /**
          * @openapi
          * /test:

@@ -20,13 +20,13 @@ class DataBaseClient {
         await mongoose.disconnect()
         console.log('[DB] Disconnected...')
     }
-    
+
     addPatient = async (schemaInstance) => {
         try {
             const patient = new Patient(schemaInstance)
             await patient.save()
             console.log('[DB] Patient created...')
-        } catch (e){
+        } catch (e) {
             console.log('[DB] Something went wrong creating a patient...', e)
         }
     }
@@ -43,8 +43,8 @@ class DataBaseClient {
     getPatientByFilter = async (filter) => {
         try {
             return await Patient.find(filter)  // z.B. { gender: 'male' }
-        } 
-        catch (e){
+        }
+        catch (e) {
             console.log('[DB] Error getting patient by filter...', e)
         }
     }
@@ -53,24 +53,33 @@ class DataBaseClient {
         try {
             return await Patient.findById(id)  // z.B. '652f...'
         }
-        catch (e){
+        catch (e) {
             console.log('[DB] Error getting patient by db id...', e)
         }
     }
-updatePatientById
+    updatePatientById
     updatePatientById = async (id, patientSchemaInstance) => {
         try {
-           const result = await Patient.updateOne(
+            const result = await Patient.updateOne(
                 { id: id },
                 { $set: patientSchemaInstance }
             )
-            if(result.matchedCount === 0) {
+            if (result.matchedCount === 0) {
                 console.log('[DB] No patient with this id found...')
             }
             return result
         } catch (e) {
             console.log('[DB] Error updating patient by id...', e)
         }
+    }
+
+    getConsentById = async (id) => {
+        // TODO: Implement the logic to retrieve consent by ID from the database
+        return null; // Placeholder return value
+    }
+
+    saveConsent = async (consentId, consentData) => {
+        // TODO: Implement the logic to save consent data to the database
     }
 }
 
