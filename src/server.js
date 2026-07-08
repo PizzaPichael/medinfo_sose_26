@@ -13,6 +13,13 @@ const handleHelloWorld = (req, res) => {
     res.status(203).json({ message: 'Hello World!' })
 }
 
+const handlePatientCheckin = (req, res) => {
+    const name = req.query.name
+    const birthdate = req.query.birthdate
+
+    res.status(200).json({message: 'handlePatientCheckin request accepted'})
+}
+
 
 const main = async () => {
     // api path definitions
