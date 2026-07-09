@@ -3,7 +3,9 @@
   "type": "module",
   "packageManager": "yarn@4.9.1",
   "scripts": {
-    "mongo": "docker run --rm -v $INIT_CWD/database:/data/db -p 27017:27017 mongo"
+    "mongo": "docker run --rm -v $INIT_CWD/database:/data/db -p 27017:27017 mongo",
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
   },
   "dependencies": {
     "express": "^5.2.1",
