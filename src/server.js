@@ -1,5 +1,9 @@
 import express from 'express'
 
+/**
+ * This is the Server class.
+ * It is solely responsible for wiring the API endpoints to functions inside the handler.
+ */
 class Server {
     constructor(handler) {
         this.app = express()
@@ -10,8 +14,8 @@ class Server {
     } 
 
     /**
-     * Verdrahtet HTTP-routes mit handler-funktionen
-     * @param {*} handler der Handler, dessen Funktionen verdrahtet werden sollen
+     * Wires HTTP-routes with handler-functions
+     * @param {*} handler the handler, whose functions the api endpoints should be wired to
      */
     #bindRoutes = (handler) => {
         this.app.post('/registerPatient', handler.registerPatient)
@@ -19,12 +23,19 @@ class Server {
         console.log('[SERVER] Routes bound...')
     }
 
+    /**
+     * The functions that makes the server listen for http requests.
+     * @param {*} port The port the server should listen on.
+     */
     listen = (port) => {
         this.httpServer = this.app.listen(port, () => {
             console.log(`Server on http://localhost:${port}`)
         })
     }
 
+    /**
+     * Function to close the server.
+     */
     async close() {
         console.log('[SERVER] Closing...')
         await this.httpServer?.close()

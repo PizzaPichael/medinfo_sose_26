@@ -4,22 +4,26 @@ import Handler from './handler/handler.js'
 import Server from './server.js'
 
 /**
- * Entry Point für dne Service "Slice C — Behandlungsdokumentation & Prozeduren"
+ * Entry point for the service "Slice C — Behandlungsdokumentation & Prozeduren"
  */
 const main = async () => {
     console.log('[APP] Starting...')
-    const url = 'mongodb://localhost:27017/docAndProceduren'
-    // Die Connection zu mongoDB wird über den Port sicher gestellt, weil mongo im Docker Container
-    // auf diese Portnummer horcht. Dieser ist gemapped auf den realen Port dieser Nummer. 
+    // --- Setting up the mongo databse connection
+    const url = 'mongodb://localhost:27017/docAndProcedures' 
     const databaseClient = new DataBaseClient(url)
     await databaseClient.connect()
 
+    // --- Creating handler and wiring dbclient to it
     const handler = new Handler(databaseClient)
 
+    // --- Creating Server and wiring handler to it
     const server = new Server(handler)
     server.listen(3000)
 
-    /* Do stuff from here...
+    /* 
+    TODO delete when not neede as reference anymore
+
+    Do stuff from here...
     const patientSchemaInstance = new PatientSchema({
         patientId: "3",
         id: "131896579",
