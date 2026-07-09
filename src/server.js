@@ -1,37 +1,34 @@
 import express from 'express'
-const app = express()
-const port = 3000
 
-app.use(express.json())
+class Server {
+    constructor(handler) {
+        this.app = express()
+        this.app.use(express.json())
+        this.httpServer = null
+        this.#bindRoutes(handler)
+        console.log('[SERVER] Created...')
+    } 
 
-// can be extracted to a different file, currently just a test example
-const handleHelloWorld = (req, res) => {
-    console.log(req.params)
-    console.log(req.query)
-    console.log(req.body)
+    /**
+     * Verdrahtet HTTP-routes mit handler-funktionen
+     * @param {*} handler der Handler, dessen Funktionen verdrahtet werden sollen
+     */
+    #bindRoutes = (handler) => {
+        this.app.post('/registerPatient', handler.registerPatient)
+        this.app.get('/test', handler.test)
+        console.log('[SERVER] Routes bound...')
+    }
 
-    res.status(203).json({ message: 'Hello World!' })
+    listen = (port) => {
+        this.httpServer = this.app.listen(port, () => {
+            console.log(`Server on http://localhost:${port}`)
+        })
+    }
+
+    async close() {
+        console.log('[SERVER] Closing...')
+        await this.httpServer?.close()
+    }
 }
 
-const handlePatientCheckin = (req, res) => {
-    const name = req.query.name
-    const birthdate = req.query.birthdate
-
-    res.status(200).json({message: 'handlePatientCheckin request accepted'})
-}
-
-
-const main = async () => {
-    // api path definitions
-    app.get('/test', handleHelloWorld)
-
-    app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`)
-    })
-}
-
-try {
-    main()
-} catch (e) {
-    console.log(e)
-}
+export default Server

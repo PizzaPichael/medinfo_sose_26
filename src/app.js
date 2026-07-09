@@ -1,14 +1,25 @@
-import DataBase from './db/db.js'
+import DataBaseClient from './db/db-client.js'
 import PatientSchema from './db/schemas/Patient.schema.js'
+import Handler from './handler/handler.js'
+import Server from './server.js'
 
+/**
+ * Entry Point für dne Service "Slice C — Behandlungsdokumentation & Prozeduren"
+ */
 const main = async () => {
-    const url = 'mongodb://localhost:27017/patients'
+    console.log('[APP] Starting...')
+    const url = 'mongodb://localhost:27017/docAndProceduren'
     // Die Connection zu mongoDB wird über den Port sicher gestellt, weil mongo im Docker Container
     // auf diese Portnummer horcht. Dieser ist gemapped auf den realen Port dieser Nummer. 
-    const database = new DataBase(url)
-    await database.connect()
+    const databaseClient = new DataBaseClient(url)
+    await databaseClient.connect()
 
-    // Do stuff from here...
+    const handler = new Handler(databaseClient)
+
+    const server = new Server(handler)
+    server.listen(3000)
+
+    /* Do stuff from here...
     const patientSchemaInstance = new PatientSchema({
         patientId: "3",
         id: "131896579",
@@ -36,11 +47,10 @@ const main = async () => {
             }
         ]
     })
-    await database.addPatient(patientSchemaInstance)
+    await databaseClient.addPatient(patientSchemaInstance)
     //await database.updatePatientById(131896579, patientSchemaInstance)
-    console.log(await database.getPatientByFilter({ id: '131896579' }))
-    //...to here.
-    await database.endConnection()
+    console.log(await databaseClient.getPatientByFilter({ id: '131896579' }))
+    ...to here.*/
 }
 
 try {
