@@ -4,8 +4,9 @@ class Handler {
      * Constructor
      * @param {*} client The dataBaseClient thats responsible for talking to the local DB
      */
-    constructor(client) {
+    constructor(client, patientRegistrationService) {
         this.dataBaseClient = client
+        this.patRegService = patientRegistrationService
         console.log('[HANDLER] Created...')
     }
 
@@ -31,8 +32,8 @@ class Handler {
      * @param {*} res Endpoint response
      */
     registerPatient = (req, res) => {
-        const name = req.query.name
-        const birthdate = req.query.birthdate
+        const patientJson = req.body.patientJson // Der Input ist entsprechend des PatientSchema formatiert
+
         res.status(200).json({ message: 'registerPatient request accepted' })
     }
 }

@@ -13,6 +13,8 @@ class Server {
         console.log('[SERVER] Created...')
     } 
 
+    // app.use(SecurityVerification)
+
     /**
      * Wires HTTP-routes with handler-functions
      * @param {*} handler the handler, whose functions the api endpoints should be wired to
