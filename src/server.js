@@ -68,6 +68,7 @@ class Server {
          *                   type: string
          */
         this.app.get('/test', handler.test)
+        this.app.post('/createPatient', handler.createPatient)
         console.log('[SERVER] Routes bound...')
     }
 
