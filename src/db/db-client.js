@@ -13,6 +13,7 @@ class DataBaseClient {
             console.log('[DB] Connected...')
         } catch (e) {
             console.log('[DB] Connection failed...', e);
+            throw e
         }
     }
 
@@ -28,24 +29,17 @@ class DataBaseClient {
             console.log('[DB] Patient created...')
         } catch (e){
             console.log('[DB] Something went wrong creating a patient...', e)
-        }
-    }
-
-    getAllPatients = async () => {
-        try {
-            return await Patient.find()
-        }
-        catch (e) {
-            console.log('[DB] Error getting all patients...', e)
+            throw e
         }
     }
 
     getPatientByFilter = async (filter) => {
         try {
-            return await Patient.find(filter)  // z.B. { gender: 'male' }
+            return await Patient.find(filter).lean()  // .lean() → plain objects statt Mongoose-docs
         } 
         catch (e){
             console.log('[DB] Error getting patient by filter...', e)
+            throw e
         }
     }
 
@@ -55,9 +49,10 @@ class DataBaseClient {
         }
         catch (e){
             console.log('[DB] Error getting patient by db id...', e)
+            throw e
         }
     }
-updatePatientById
+
     updatePatientById = async (id, patientSchemaInstance) => {
         try {
            const result = await Patient.updateOne(
@@ -66,10 +61,12 @@ updatePatientById
             )
             if(result.matchedCount === 0) {
                 console.log('[DB] No patient with this id found...')
+                throw new Error('No patient with this id found')
             }
             return result
         } catch (e) {
             console.log('[DB] Error updating patient by id...', e)
+            throw e
         }
     }
 }
