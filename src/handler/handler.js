@@ -9,17 +9,8 @@ class Handler {
      * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
      */
     constructor(localDbClient, fhirClient, patientRegistrationService) {
-        this.dataBaseClient = localDbClient
-        this.fhirClient = fhirClient
         this.patRegService = patientRegistrationService
         console.log('[HANDLER] Created...')
-    }
-
-    /**
-     * Function for ending the connection to the local DB if needed.
-     */
-    endDbConenction = async () => {
-        await this.databaseClient.endConnection()
     }
 
     /**
@@ -50,7 +41,7 @@ class Handler {
         }
         catch (e) {
             console.log('[HANDLER]: ', e)
-            // TBD: split this, siehe claude convo
+            // Returns either the status code of the AppError Instance or defaults to a 500 status
             return res.status(e.statusCode ?? 500).json({ error: e.message })
         }
         
@@ -62,9 +53,13 @@ class Handler {
                 wantedLocalPatientInstance = localGetPatientResponse[0]
             }
         }
-        console.log(wantedLocalPatientInstance)
+        // console.log(wantedLocalPatientInstance)
         
         // !!!!---TBD hier: weiteren Verlauf deer Tranasktion hinzufügen, also Abfrage der FHIR, falls lokal nicht gefunden---!!!! //
+        
+        else {
+            
+        }
 
         res.status(200).json({ 
             message: 'registerPatient request accepted',
