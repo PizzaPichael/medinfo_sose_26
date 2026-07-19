@@ -15,7 +15,7 @@ class Handler {
      * Function for ending the connection to the local DB if needed.
      */
     endDbConenction = async () => {
-        await databaseClient.endConnection()
+        await this.databaseClient.endConnection()
     }
 
     /**
