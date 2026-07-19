@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import Patient from './schemas/Patient.schema.js'
+import Consent from './schemas/Consent.schema.js'
 
 class DataBaseClient {
     constructor(url) {
@@ -73,13 +74,58 @@ class DataBaseClient {
         }
     }
 
+    /**
+     * Retrieves a consent by consent ID from the database
+     * DB Client responsibility: Handle all database operations
+     * 
+     * @param {string} id - Consent ID to retrieve
+     * @returns {Object} The consent document or null if not found
+     * @throws {Error} If database operation fails
+     */
     getConsentById = async (id) => {
-        // TODO: Implement the logic to retrieve consent by ID from the database
-        return null; // Placeholder return value
+        try {
+            return await Consent.findOne({ consentId: id })
+        } catch (e) {
+            console.error('[DB] Error getting consent by ID...', e)
+            throw new Error(`Database error: ${e.message}`)
+        }
     }
 
-    saveConsent = async (consentId, consentData) => {
-        // TODO: Implement the logic to save consent data to the database
+    /**
+     * Retrieves consents by patient ID from the database
+     * DB Client responsibility: Handle all database operations
+     * 
+     * @param {string} patientId - Patient ID to retrieve consents for
+     * @returns {Array} Array of consent documents for the patient
+     * @throws {Error} If database operation fails
+     */
+    getConsentByPatientId = async (patientId) => {
+        try {
+            return await Consent.findOne({ 'subject.reference': `Patient/${patientId}` })
+        } catch (e) {
+            console.error('[DB] Error getting consent by patient ID...', e)
+            throw new Error(`Database error: ${e.message}`)
+        }
+    }
+
+    /**
+     * Saves a consent schema instance to the database
+     * DB Client responsibility: Handle all database operations
+     * 
+     * @param {Object} schemaInstance - Consent object matching Consent schema
+     * @returns {Object} The created consent document
+     * @throws {Error} If database operation fails
+     */
+    saveConsent = async (schemaInstance) => {
+        try {
+            const consent = new Consent(schemaInstance)
+            const savedConsent = await consent.save()
+            console.log('[DB] Consent created...')
+            return savedConsent
+        } catch (e) {
+            console.error('[DB] Something went wrong creating consent...', e)
+            throw new Error(`Database error: ${e.message}`)
+        }
     }
 }
 
