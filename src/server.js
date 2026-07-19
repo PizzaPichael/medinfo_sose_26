@@ -50,7 +50,63 @@ class Server {
          *                   type: string
          */
         this.app.post('/registerPatient', handler.registerPatient)
+        /**
+         * @openapi
+         * /consent/{patientId}:
+         *   get:
+         *     summary: Prüft die Einwilligung eines Patienten
+         *     parameters:
+         *       - in: path
+         *         name: patientId
+         *         required: true
+         *         schema:
+         *           type: string
+         *         description: Die ID des Patienten
+         *     responses:
+         *       200:
+         *         description: Einwilligung gefunden
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 consent:
+         *                   type: object
+         *       404:
+         *         description: Patient nicht gefunden
+         */
         this.app.get('/consent/:patientId', handler.checkConsent)
+        /**
+         * @openapi
+         * /consent:
+         *   post:
+         *     summary: Erstellt eine neue Einwilligung
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               patientId:
+         *                 type: string
+         *                 description: Die ID des Patienten
+         *               consent:
+         *                 type: object
+         *                 description: Einwilligungsdaten
+         *     responses:
+         *       200:
+         *         description: Einwilligung erfolgreich erstellt
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         *       400:
+         *         description: Ungültige Anfrage
+         */
         this.app.post('/consent', handler.createConsent)
         /**
          * @openapi
