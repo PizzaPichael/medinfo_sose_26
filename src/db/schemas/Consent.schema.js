@@ -12,7 +12,10 @@ const consentSchema = new mongoose.Schema({
         status: String, // "generated"
         div: String
     },
-    status: String, // "active"
+    status: {
+        type: String, // "active"
+        required: true,
+    }, 
     category: [
         {
             coding: [
@@ -24,8 +27,11 @@ const consentSchema = new mongoose.Schema({
         }
     ],
     subject: {
-        reference: String, // "Patient/example"
-        display: String // "Peter James Chalmers"
+        reference: {
+            type: String, // Patient ID, e.g. "Patient/123"
+            required: true
+        },
+        display: String // Optional: "Patient Name"
     },
     date: Date, // "2018-12-28"
     controller: [
@@ -48,15 +54,21 @@ const consentSchema = new mongoose.Schema({
             ]
         }
     ],
-    decision: String, // "permit" or "deny"
-    provision: [
-        {
-            period: {
-                start: Date, // "1964-01-01"
-                end: Date // "2019-01-01"
+    decision: { 
+        type: String, // "permit" or "deny"
+        required: true
+    },
+    provision: {
+        type: [
+            {
+                period: {
+                    start: Date, // "1964-01-01"
+                    end: Date // "2019-01-01"
+                }
             }
-        }
-    ]
+        ],
+        required: true
+    }
 })
 
 export default mongoose.model('Consent', consentSchema)
