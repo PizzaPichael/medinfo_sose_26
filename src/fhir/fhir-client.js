@@ -1,36 +1,42 @@
-import fs from 'node:fs/promises'
+import AppError from '../errors/AppError.js'
 
-let hello = "hello"
-var world = "world"
-const where = "people"
+/**
+ * Client für Zugriff auf einen FHIR-Server (Suche und Anlegen/Aktualisieren von Patient-Ressourcen).
+ */
+class FhirClient {
+    constructor(fhirServerUrl) {
+        this.url = fhirServerUrl
+        console.log('[FHIR] Fhir-Client created...')
+    }
 
-const runner = () => {
-    console.log(`${hello}, ${where}`)
+    /**
+     * Sucht Patient-Ressourcen anhand beliebiger Suchparameter (z.B. { birthdate, name }).
+     * @param {Object} attributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
+     * @returns {Promise<Object>} FHIR-Bundle mit den gefundenen Patienten.
+     */
+    getPatientByAttribute = async (attributes) => {
+        const params = new URLSearchParams(attributes)
+        const result = await fetch(`${this.url}/Patient?${params}`)
+        if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
+        return await result.json()
+    }
+
+    /**
+     * Legt eine Patient-Ressource mit gegebener ID an oder aktualisiert sie vollständig (FHIR PUT/Update).
+     * @param {Object} patient - FHIR-Patient-Ressource nach dem patientSchema, muss `id` enthalten.
+     * @returns {Promise<Object>} Die vom Server gespeicherte Patient-Ressource.
+     */
+    putNewPatient = async (patient) => {
+        const result = await fetch(`${this.url}/Patient/${patient.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/fhir+json'
+            },
+            body: JSON.stringify(patient)
+        })
+        if (!result.ok) throw new AppError(`[FHIR] Error creating new patient... FHIR: ${result}`, result.status)
+        return await result.json()
+    }
 }
 
-const getPatientByAttribute = async (key, value) => {
-    const params = newUrlSearchParams({ [key]: value })
-    const result = await fetch('https://hapi.fhir.org/baseR4/Patient?${params}')
-    if (!result.ok) throw new Error(`HTTP ${result.status}`)
-    return await result.json()
-}
-
-const putNewPatient = async (id, patient) => {
-    const result = await fetch('https://hapi.fhir.org/baseR4/Patient/${id}', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/fhir+json'
-        },
-        body: JSON.stringify(patient)
-    })
-    if (!result.ok) throw new Error(`HTTP ${result.status}`)
-    return await result.json()
-}
-
-
-const run = async () => {
-    // await getPatient()
-    await searchPatients()
-}
-
-run()
+export default FhirClient
