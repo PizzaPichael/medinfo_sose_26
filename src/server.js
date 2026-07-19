@@ -3,6 +3,86 @@ import swaggerUi from 'swagger-ui-express'
 import swaggerSpec from './swagger.js'
 
 /**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Patient:
+ *       type: object
+ *       properties:
+ *         resourceType:
+ *           type: string
+ *           example: Patient
+ *         id:
+ *           type: string
+ *         identifier:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               system:
+ *                 type: string
+ *               value:
+ *                 type: string
+ *         active:
+ *           type: boolean
+ *         name:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               use:
+ *                 type: string
+ *                 example: official
+ *               family:
+ *                 type: string
+ *               given:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *         telecom:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               system:
+ *                 type: string
+ *               value:
+ *                 type: string
+ *               use:
+ *                 type: string
+ *         gender:
+ *           type: string
+ *         birthDate:
+ *           type: string
+ *           example: "1974-05-12"
+ *         address:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               use:
+ *                 type: string
+ *               line:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               city:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *               postalCode:
+ *                 type: string
+ *               country:
+ *                 type: string
+ *         maritalStatus:
+ *           type: object
+ *         communication:
+ *           type: array
+ *           items:
+ *             type: object
+ */
+
+/**
  * This is the Server class.
  * It is solely responsible for wiring the API endpoints to functions inside the handler.
  */
@@ -27,26 +107,34 @@ class Server {
          * @openapi
          * /registerPatient:
          *   post:
-         *     summary: Registriert einen Patienten am Empfang
+         *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
          *     requestBody:
          *       required: true
+         *       description: Der Patient selbst als Body, muss mind. ein name-Element mit use "official" enthalten
          *       content:
          *         application/json:
          *           schema:
-         *             type: object
-         *             properties:
-         *               patientJson:
-         *                 type: object
-         *                 description: Patient-Ressource nach dem Patient-Schema
+         *             $ref: '#/components/schemas/Patient'
          *     responses:
          *       200:
-         *         description: Registrierung akzeptiert
+         *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
          *         content:
          *           application/json:
          *             schema:
          *               type: object
          *               properties:
          *                 message:
+         *                   type: string
+         *                 patientId:
+         *                   type: string
+         *       default:
+         *         description: Fehler bei der lokalen DB-Abfrage (Statuscode je nach AppError, sonst 500)
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 error:
          *                   type: string
          */
         this.app.post('/registerPatient', handler.registerPatient)
@@ -55,7 +143,8 @@ class Server {
          * @openapi
          * /test:
          *   get:
-         *     summary: Testet, ob der Server erreichbar ist
+         *     deprecated: true
+         *     summary: Testet, ob der Server erreichbar ist (temporärer Debug-Endpoint, TBD Entfernen am Ende)
          *     responses:
          *       203:
          *         description: Server antwortet
@@ -68,6 +157,29 @@ class Server {
          *                   type: string
          */
         this.app.get('/test', handler.test)
+        /**
+         * @openapi
+         * /createPatient:
+         *   post:
+         *     summary: Legt einen neuen Patienten in der lokalen DB an
+         *     requestBody:
+         *       required: true
+         *       description: Der Patient selbst als Body, nach dem Patient-Schema
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/Patient'
+         *     responses:
+         *       200:
+         *         description: Patient erfolgreich angelegt
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         */
         this.app.post('/createPatient', handler.createPatient)
         console.log('[SERVER] Routes bound...')
     }
