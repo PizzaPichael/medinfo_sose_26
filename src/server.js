@@ -70,10 +70,16 @@ class Server {
          *             schema:
          *               type: object
          *               properties:
+         *                 message:
+         *                   type: string
          *                 consent:
          *                   type: object
+         *       400:
+         *         description: Ungültige Anfrage (fehlende oder falsche Patient ID)
          *       404:
-         *         description: Patient nicht gefunden
+         *         description: Patient nicht gefunden oder keine gültige Einwilligung
+         *       500:
+         *         description: Serverfehler
          */
         this.app.get('/consent/:patientId', handler.checkConsent)
         /**
@@ -88,14 +94,21 @@ class Server {
          *           schema:
          *             type: object
          *             properties:
-         *               patientId:
-         *                 type: string
-         *                 description: Die ID des Patienten
-         *               consent:
-         *                 type: object
-         *                 description: Einwilligungsdaten
+              *               status:
+              *                 type: string
+              *                 description: 'Einwilligungsstatus, z.B. "active"'
+              *               decision:
+              *                 type: string
+              *                 description: 'permit oder deny'
+         *               provision:
+         *                 type: array
+         *                 items:
+         *                   type: object
+              *               subject:
+              *                 type: object
+              *                 description: 'Referenz auf Patient, z.B. Patient/123'
          *     responses:
-         *       200:
+         *       201:
          *         description: Einwilligung erfolgreich erstellt
          *         content:
          *           application/json:
@@ -104,8 +117,12 @@ class Server {
          *               properties:
          *                 message:
          *                   type: string
+         *                 consentId:
+         *                   type: string
          *       400:
          *         description: Ungültige Anfrage
+         *       500:
+         *         description: Serverfehler
          */
         this.app.post('/consent', handler.createConsent)
         /**

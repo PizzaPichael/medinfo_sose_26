@@ -2,12 +2,16 @@ class Handler {
 
     /**
      * Constructor
-     * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
+     * @param {DataBaseClient} localDbClient - The database client responsible for talking to the local DB
+     * @param {*} fhirClient - Client for FHIR operations
+     * @param {PatientRegistration} patientRegistrationService - Service for patient registration
+     * @param {ConsentRetrieval} consentRetrievalService - Service for consent operations
      */
-    constructor(localDbClient, fhirClient, patientRegistrationService) {
+    constructor(localDbClient, fhirClient, patientRegistrationService, consentRetrievalService) {
         this.dataBaseClient = localDbClient
         this.fhirClient = fhirClient
         this.patRegService = patientRegistrationService
+        this.consentService = consentRetrievalService
         console.log('[HANDLER] Created...')
     }
 
@@ -39,46 +43,90 @@ class Handler {
     }
 
     /**
-     * Checks for an existing valid consent.
-     * Request body should be empty.
-     * Returns the consent if it exists, or a 404 if not.
+     * Checks for an existing valid consent for a patient.
+     * Handler responsibility: Accept request, validate HTTP parameters, delegate to service, return response
+     * 
+     * @param {Object} req - HTTP request with patientId in params
+     * @param {Object} res - HTTP response
+     * 
+     * Returns:
+     * - 200: Valid consent found
+     * - 404: Patient not found or no valid consent found
+     * - 400: Invalid patient ID format
+     * - 500: Server error
      */
-    checkConsent = (req, res) => {
-        const patientId = req.params.patientId;
-
-        // check if patient exists in the database
+    checkConsent = async (req, res) => {
         try {
-            const patient = this.dataBaseClient.getPatientByDbId(patientId);
-            console.log("Patient found:", patient);
-        } catch (error) {
-            return res.status(404).json({ error: "Patient not found" });
-        }
+            const patientId = req.params.patientId
 
-        try {
-            // TODO: check for decision to be permit and status to be active, if not continue to create a new consent form if data given or return an error if not.
-            // TODO: also check if provision period is valid, if not continue to create a new consent form if data given or return an error if not.
-            const consent = this.dataBaseClient.getConsentByPatientId(patientId);
-            return res.status(200).json({
-                consent
-            });
+            // Step 1: Handler validates HTTP parameters
+            if (!patientId) {
+                return res.status(400).json({ error: "Patient ID is required" })
+            }
+
+            // Step 2: DB Client checks if patient exists
+            /*const patient = await this.dataBaseClient.getPatientByDbId(patientId)
+            if (!patient) {
+                return res.status(404).json({ error: "Patient not found" })
+            }*/
+
+            // Step 3: Service retrieves and validates consent
+            const checkResult = await this.consentService.checkConsentForPatient(patientId)
+
+            // Step 4: Handler returns appropriate response based on validation result
+            if (checkResult.isValid) {
+                return res.status(200).json({
+                    message: "Valid consent found",
+                    consent: checkResult.consent
+                })
+            } else {
+                return res.status(404).json({
+                    message: "No valid consent found",
+                    reason: checkResult.reason,
+                    consent: checkResult.consent
+                })
+            }
         } catch (error) {
-            console.error("Error checking consent:", error);
-            return res.status(404).json({ error: "No valid consent found" });
+            console.error("[HANDLER] Error checking consent:", error.message)
+            return res.status(500).json({ error: error.message || "Failed to check consent" })
         }
     }
 
     /**
      * Creates a new consent.
-     * Requires the full request body.
-     * @returns confirmation of created consent or an error.
+     * Handler responsibility: Accept request, validate HTTP parameters, return response
+     * Delegates to service for business logic and to db client for persistence
+     * 
+     * @param {Object} req - HTTP request with consent data in body
+     * @param {Object} res - HTTP response
+     * 
+     * Request body should contain:
+     * - status: consent status, e.g. "active" (required)
+     * - decision: "permit" or "deny" (required)
+     * - provision: array of provision objects (required)
+     * - subject: { reference: "Patient/123", display?: "Patient Name" } (required - needs patient ID)
+     * - category, controller, sourceAttachment, regulatoryBasis: (optional)
      */
-    createConsent = (req, res) => {
+    createConsent = async (req, res) => {
         try {
-            saveConsentToDatabase(consentId, status, decision, provision);
-            return res.status(201).json({ message: "Consent created successfully" });
+            // Step 1: Handler receives and validates HTTP request
+            if (!req.body) {
+                return res.status(400).json({ error: "Request body is required" })
+            }
+
+            // Step 2: Service transforms request body into schema format and validates
+            const consentSchemaData = this.consentService.buildConsentSchema(req.body)
+
+            // Step 3: DB Client persists the consent to database
+            await this.dataBaseClient.saveConsent(consentSchemaData)
+            
+            return res.status(201).json({ 
+                message: "Consent created successfully",
+                consentId: consentSchemaData.consentId
+            })
         } catch (error) {
-            console.error("Error creating consent:", error);
-            return res.status(500).json({ error: "Failed to create consent" });
+            console.error("[HANDLER] Error creating consent:", error.message)
+            return res.status(500).json({ error: error.message || "Failed to create consent" })
         }
     }
 }
