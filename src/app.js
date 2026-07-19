@@ -2,6 +2,7 @@ import DataBaseClient from './db/db-client.js'
 import PatientSchema from './db/schemas/Patient.schema.js'
 import Handler from './handler/handler.js'
 import Server from './server.js'
+import FhirClient from './fhir/fhir-client.js'
 
 /**
  * Entry point for the service "Slice C — Behandlungsdokumentation & Prozeduren"
@@ -9,12 +10,16 @@ import Server from './server.js'
 const main = async () => {
     console.log('[APP] Starting...')
     // --- Setting up the mongo databse connection
-    const url = 'mongodb://localhost:27017/docAndProcedures' 
-    const databaseClient = new DataBaseClient(url)
+    const localDbUrl = 'mongodb://localhost:27017/docAndProcedures' 
+    const databaseClient = new DataBaseClient(localDbUrl)
     await databaseClient.connect()
 
+    // --- Setting up fhir client
+    const fhirServerUrl = 'https://hapi.fhir.org/baseR4'
+    const fhirClient = new FhirClient(fhirServerUrl)
+
     // --- Creating handler and wiring dbclient to it
-    const handler = new Handler(databaseClient)
+    const handler = new Handler(databaseClient, fhirClient)
 
     // --- Creating Server and wiring handler to it
     const server = new Server(handler)

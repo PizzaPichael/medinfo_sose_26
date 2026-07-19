@@ -2,10 +2,11 @@ class Handler {
 
     /**
      * Constructor
-     * @param {*} client The dataBaseClient thats responsible for talking to the local DB
+     * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
      */
-    constructor(client, patientRegistrationService) {
-        this.dataBaseClient = client
+    constructor(localDbClient, fhirClient, patientRegistrationService) {
+        this.dataBaseClient = localDbClient
+        this.fhirClient = fhirClient
         this.patRegService = patientRegistrationService
         console.log('[HANDLER] Created...')
     }
