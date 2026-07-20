@@ -27,11 +27,11 @@ class Handler {
     registerPatient = async (req, res) => {
         const patientToRegisterJson = req.body //.patientJson // Der Input ist entsprechend des PatientSchema formatiert
         try {
-            const wantedLocalPatientInstance = await this.patRegService.registerPatient(patientToRegisterJson)
+            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
 
             res.status(200).json({ 
                 message: 'registerPatient request successfull',
-                'patientId':  wantedLocalPatientInstance.id
+                'patientId':  registeredPatientId
             })
         }
         catch (e) {

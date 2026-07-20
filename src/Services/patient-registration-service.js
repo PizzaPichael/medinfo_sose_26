@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import AppError from '../errors/AppError.js'
 
 const tiebreaker = ['maritalStatus', 'address', 'telecom']
@@ -14,22 +15,23 @@ class PatientRegistration {
     getPatientFromDb = async (dbClient, patientJson) => {
         let getPatientResponse = null
         let wantedPatientInstance = null
-
+        // Get the name of the patient to register that is saved as its official name
         const official = patientJson.name.find(name => name.use == 'official')
         const filterAttributes = {
             'familyName': official.family,
             'surName': official.given[0],
             'birthDate': patientJson.birthDate
         }
-
-        getPatientResponse = await this.dbClient.getPatientByFilter(
+        console.log(`filterAttributes: `, filterAttributes)
+        getPatientResponse = await dbClient.getPatientByFilter(
             {
                 'name.family': filterAttributes.familyName,
                 'name.given': filterAttributes.surName,
                 'birthDate': filterAttributes.birthDate
             }
         )
-        
+        console.log(`getPatientResponse: `, getPatientResponse)
+
         if(getPatientResponse != null) {
             if(getPatientResponse.length > 1){
                 wantedPatientInstance = tiebreak(getPatientResponse, patientJson)
@@ -47,27 +49,30 @@ class PatientRegistration {
      * @returns 
      */
     registerPatient = async (patientJson) => {     
-        const wantedLocalPatientInstance = await getPatientFromDb(this.localDbClient, patientJson)
-        const wantedFhirPatientInstance = await getPatientFromDb(this.fhirClient, patientJson)
-        // Get whichever is not null in next line, can also be x ? x : y === x ?? y
-        const outputPatientInstance = wantedLocalPatientInstance ?? wantedFhirPatientInstance
+        const wantedLocalPatientInstance = await this.getPatientFromDb(this.dataBaseClient, patientJson)
+        const wantedFhirPatientInstance = await this.getPatientFromDb(this.fhirClient, patientJson)
 
-        if(outputPatientInstance) {
-            return outputPatientInstance
-        } else {
-            // TBD Create PAtienti localy if no aptient found
+        let outputPatientInstance = wantedLocalPatientInstance
+        // If no local patient exist, but fhir patient exists, create locla patient from fhir
+        if(!outputPatientInstance && wantedFhirPatientInstance) {
+            return await this.createPatient(wantedFhirPatientInstance)
         }
-        return null //TBD
+
+        // If neither local, nor fhir patient exist, create new local patient from input data
+        if(!outputPatientInstance && !wantedLocalPatientInstance && !wantedFhirPatientInstance) {
+            return await this.createPatient(patientJson)
+        }
+        // If local patient exists, return its id
+        return outputPatientInstance.id
     }
 
     createPatient = async (patientJson) => {
-        try {
-            await this.dataBaseClient.addPatient(patientJson)
-            return true
+        // FHIR liefert bereits eine id mit, sonst selbst eine vergeben
+        if(!patientJson.id) {
+            patientJson.id = randomUUID()
         }
-        catch (e) {
-            throw e
-        }
+        await this.dataBaseClient.addPatient(patientJson)
+        return patientJson.id
     }
 }
 

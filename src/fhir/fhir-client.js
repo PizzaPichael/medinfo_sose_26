@@ -11,8 +11,10 @@ class FhirClient {
 
     /**
      * Sucht Patient-Ressourcen anhand beliebiger Suchparameter (z.B. { birthdate, name }).
+     * Entfernt fhir json balast und gibt nur die resource Einträge der einzelnen entry Objekte des entry
+     * arrays zurück, weil diese die Patienten Instanz in unserem Schema enthalten.
      * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
-     * @returns {Promise<Object>} FHIR-Bundle mit den gefundenen Patienten.
+     * @returns {Promise<Object>} Array mit Patienten Instanzen
      */
     getPatientByFilter = async (filterAttributes) => {
         const params = new URLSearchParams(filterAttributes)
