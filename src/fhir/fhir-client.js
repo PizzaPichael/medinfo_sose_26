@@ -37,6 +37,24 @@ class FhirClient {
         if (!result.ok) throw new AppError(`[FHIR] Error creating new patient... FHIR: ${result}`, result.status)
         return await result.json()
     }
+
+    getOpenEncountersForPatient = async (patientId) => {
+        const result = await fetch(`${this.url}/Encounter?subject=Patient/${patientId}`)
+        if (!result.ok) throw new AppError(`[FHIR] Error getting open encounters... FHIR: ${result}`, result.status)
+        return await result.json()
+    }
+
+    createEncounter = async (encounter) => {
+        const result = await fetch(`${this.url}/Encounter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/fhir+json'
+            },
+            body: JSON.stringify(encounter)
+        })
+        if (!result.ok) throw new AppError(`[FHIR] Error creating encounter... FHIR: ${result}`, result.status)
+        return await result.json()
+    }
 }
 
 export default FhirClient
