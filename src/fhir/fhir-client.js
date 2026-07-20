@@ -18,7 +18,18 @@ class FhirClient {
         const params = new URLSearchParams(filterAttributes)
         const result = await fetch(`${this.url}/Patient?${params}`)
         if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
-        return await result.json()
+        const resultJson =  await result.json()
+        if(resultJson.total === 0) {
+            // Gibt leeres Array zurück, damit RegisterPatient weiß, dass es eine neue
+            // Patientin anlegen muss. Fehler werfen würde hier die ganze Transaktion abbrechen.
+            return []
+        } 
+
+        const receivedPatients = []
+        for (const entry of resultJson.entry) {
+            receivedPatients.push(entry.resource)
+        }
+        return receivedPatients
     }
 
     /**
