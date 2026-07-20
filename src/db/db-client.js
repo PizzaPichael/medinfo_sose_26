@@ -34,9 +34,9 @@ class DataBaseClient {
         }
     }
 
-    getPatientByFilter = async (filter) => {
+    getPatientByFilter = async (filterAttributes) => {
         try {
-            return await Patient.find(filter).lean()  // .lean() → plain objects statt Mongoose-docs
+            return await Patient.find(filterAttributes).lean()  // .lean() → plain objects statt Mongoose-docs
         } 
         catch (e){
             console.log('[DB] Error getting patient by filter...', e)

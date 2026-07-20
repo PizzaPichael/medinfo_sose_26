@@ -10,44 +10,57 @@ class PatientRegistration {
         console.log('[PATIENT-REGISTRATION] Created...')
     }
 
+    
+    getPatientFromDb = async (dbClient, patientJson) => {
+        let getPatientResponse = null
+        let wantedPatientInstance = null
+
+        const official = patientJson.name.find(name => name.use == 'official')
+        const filterAttributes = {
+            'familyName': official.family,
+            'surName': official.given[0],
+            'birthDate': patientJson.birthDate
+        }
+
+        getPatientResponse = await this.dbClient.getPatientByFilter(
+            {
+                'name.family': filterAttributes.familyName,
+                'name.given': filterAttributes.surName,
+                'birthDate': filterAttributes.birthDate
+            }
+        )
+        
+        if(getPatientResponse != null) {
+            if(getPatientResponse.length > 1){
+                wantedPatientInstance = tiebreak(getPatientResponse, patientJson)
+            } else {
+                wantedPatientInstance = getPatientResponse[0]
+            }
+            return wantedPatientInstance
+        }
+        return null
+    }
+
     /**
      * 
      * @param {*} patientJson 
      * @returns 
      */
-    registerPatient = async (patientJson) => {
-        let localGetPatientResponse = null
-        try {
-            const official = patientJson.name.find(name => name.use == 'official')
-            localGetPatientResponse = await this.dataBaseClient.getPatientByFilter(
-                {
-                    'name.family': official.family,
-                    'name.given': official.given[0]
-                }
-            )
-        }
-        catch (e) {
-            throw e
-        }
+    registerPatient = async (patientJson) => {     
+        const wantedLocalPatientInstance = await getPatientFromDb(this.localDbClient, patientJson)
+        const wantedFhirPatientInstance = await getPatientFromDb(this.fhirClient, patientJson)
+        // Get whichever is not null in next line, can also be x ? x : y === x ?? y
+        const outputPatientInstance = wantedLocalPatientInstance ?? wantedFhirPatientInstance
 
-        let wantedLocalPatientInstance
-        if(localGetPatientResponse != null) {
-            if(localGetPatientResponse.length > 1){
-                wantedLocalPatientInstance = tiebreak(localGetPatientResponse, patientJson)
-            } else {
-                wantedLocalPatientInstance = localGetPatientResponse[0]
-            }
+        if(outputPatientInstance) {
+            return outputPatientInstance
+        } else {
+            // TBD Create PAtienti localy if no aptient found
         }
-
-        else {
-            //TBD implement fhir client actions
-        }
-
         return null //TBD
     }
 
     createPatient = async (patientJson) => {
-        //TBD remove or move to other service
         try {
             await this.dataBaseClient.addPatient(patientJson)
             return true
@@ -69,18 +82,18 @@ class PatientRegistration {
  *                                      - A recursive call of itself
  */
 const tiebreak = (listOfPatientInstances, patientiToSearchFor, i = 0) => {
-    console.log('[TIEBREAKER] Started')
+    console.log('[REGISTRATION TIEBREAKER] Started')
     if(listOfPatientInstances.length == 1) {
-        console.log('[TIEBREAKER] Unique patient found')
+        console.log('[REGISTRATION TIEBREAKER] Unique patient found')
         return listOfPatientInstances[0]
     }
     if(i >= tiebreaker.length) {
-        console.log('[TIEBREAKER] Ran out of tiebreakers. No unique patient found')
-        return null
+        console.log('[REGISTRATION TIEBREAKER] Ran out of tiebreakers. No unique patient found')
+        throw new AppError('[REGISTRATION TIEBREAKER] Ran out of tiebreakers. No unique patient found', 400)
     }
 
     const currentTiebreaker = tiebreaker[i]
-    console.log('[TIEBREAKER] Filtering by tiebreaker', currentTiebreaker)
+    console.log('[REGISTRATION TIEBREAKER] Filtering by tiebreaker', currentTiebreaker)
 
     // The next line is a function, that removes the mongoose '_id' value from an attribute of
     // a patient instance, that mongoose has returned to us from the db.

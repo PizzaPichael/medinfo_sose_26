@@ -11,11 +11,11 @@ class FhirClient {
 
     /**
      * Sucht Patient-Ressourcen anhand beliebiger Suchparameter (z.B. { birthdate, name }).
-     * @param {Object} attributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
+     * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
      * @returns {Promise<Object>} FHIR-Bundle mit den gefundenen Patienten.
      */
-    getPatientByAttribute = async (attributes) => {
-        const params = new URLSearchParams(attributes)
+    getPatientByFilter = async (filterAttributes) => {
+        const params = new URLSearchParams(filterAttributes)
         const result = await fetch(`${this.url}/Patient?${params}`)
         if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
         return await result.json()
