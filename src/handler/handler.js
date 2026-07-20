@@ -1,13 +1,16 @@
+import AppError from '../errors/AppError.js'
+
 class Handler {
 
     /**
      * Constructor
      * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
      */
-    constructor(localDbClient, fhirClient, patientRegistrationService) {
+    constructor(localDbClient, fhirClient, patientRegistrationService, treatmentDocumentationService) {
         this.dataBaseClient = localDbClient
         this.fhirClient = fhirClient
         this.patRegService = patientRegistrationService
+        this.treatmentDocumentationService = treatmentDocumentationService
         console.log('[HANDLER] Created...')
     }
 
@@ -36,6 +39,17 @@ class Handler {
         const patientJson = req.body.patientJson // Der Input ist entsprechend des PatientSchema formatiert
 
         res.status(200).json({ message: 'registerPatient request accepted' })
+    }
+
+    createEncounter = async (req, res) => {
+        try {
+            const { patientId } = req.body
+            const encounter = await this.treatmentDocumentationService.createOpenEncounterTransaction(patientId)
+            res.status(201).json(encounter)
+        } catch (error) {
+            const statusCode = error.statusCode || 500
+            res.status(statusCode).json({ message: error.message })
+        }
     }
 }
 

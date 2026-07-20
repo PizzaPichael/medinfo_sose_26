@@ -53,6 +53,26 @@ class Server {
 
         /**
          * @openapi
+         * /encounter:
+         *   post:
+         *     summary: Erstellt einen offenen Encounter für einen bestehenden Patienten
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               patientId:
+         *                 type: string
+         *     responses:
+         *       201:
+         *         description: Encounter erstellt
+         */
+        this.app.post('/encounter', handler.createEncounter)
+
+        /**
+         * @openapi
          * /test:
          *   get:
          *     summary: Testet, ob der Server erreichbar ist
