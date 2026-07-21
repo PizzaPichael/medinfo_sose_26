@@ -2,6 +2,30 @@ import mongoose from 'mongoose'
 import Patient from './schemas/Patient.schema.js'
 import AppError from '../errors/AppError.js'
 
+// Übersetzt FHIR-Suchparameter-Namen in die lokalen Mongo-Feldpfade.
+// Attribute ohne Eintrag werden unverändert als Feldname übernommen (z.B. gender, active).
+const fhirToMongoField = {
+    family: 'name.family',
+    given: 'name.given',
+    birthdate: 'birthDate',
+    identifier: 'identifier.value',
+    telecom: 'telecom.value',
+    'address-use': 'address.use',
+    'address-city': 'address.city',
+    'address-state': 'address.state',
+    'address-postalcode': 'address.postalCode',
+    'address-country': 'address.country',
+    language: 'communication.language.coding.code'
+}
+
+export const buildMongoFilter = (filterAttributes) => {
+    const mongoFilter = {}
+    for (const [key, value] of Object.entries(filterAttributes)) {
+        mongoFilter[fhirToMongoField[key] ?? key] = value
+    }
+    return mongoFilter
+}
+
 class DataBaseClient {
     constructor(url) {
         this.url = url
@@ -38,25 +62,7 @@ class DataBaseClient {
     getPatientByFilter = async (filterAttributes) => {
         console.log('[DB] getPatientByFilter called')
         try {
-            // Übersetzt FHIR-Suchparameter-Namen in die lokalen Mongo-Feldpfade.
-            // Attribute ohne Eintrag werden unverändert als Feldname übernommen (z.B. gender, active).
-            const fhirToMongoField = {
-                family: 'name.family',
-                given: 'name.given',
-                birthdate: 'birthDate',
-                identifier: 'identifier.value',
-                telecom: 'telecom.value',
-                'address-use': 'address.use',
-                'address-city': 'address.city',
-                'address-state': 'address.state',
-                'address-postalcode': 'address.postalCode',
-                'address-country': 'address.country',
-                language: 'communication.language.coding.code'
-            }
-            const mongoFilter = {}
-            for (const [key, value] of Object.entries(filterAttributes)) {
-                mongoFilter[fhirToMongoField[key] ?? key] = value
-            }
+            const mongoFilter = buildMongoFilter(filterAttributes)
             const result = await Patient.find(mongoFilter).lean()  // .lean() → plain objects statt Mongoose-docs
             console.log(result.length != 0 ? '[DB] Patient found' : '[DB] Patient not found')
             return result
