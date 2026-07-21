@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import AppError from '../errors/AppError.js'
+import auditEmitter from '../audit/audit-emitter.js'
 
 const tiebreaker = ['maritalStatus', 'address', 'telecom']
 
@@ -24,9 +25,11 @@ class PatientRegistration {
      * Bei mehreren Treffern wird der eindeutige Patient über tiebreak() ermittelt.
      * @param {*} dbClient - Client (lokale DB oder FHIR), der getPatientByFilter implementiert.
      * @param {*} patientJson - Der zu registrierende Patient, muss ein name-Element mit use 'official' enthalten.
+     * @param {string} transactionId - Korreliert das emittierte Audit-Sub-Event mit der übergeordneten Transaktion.
+     * @param {string} sourceLabel - Bezeichnung der Quelle für das Audit-Event, z.B. 'localSearch' oder 'fhirSearch'.
      * @returns {Promise<Object|null>} Der gefundene Patient oder null, falls keiner existiert.
      */
-    getPatientFromDb = async (dbClient, patientJson) => {
+    getPatientFromDb = async (dbClient, patientJson, transactionId, sourceLabel) => {
         console.log(`[REGISTRATION] getPatientFromDb called with ${dbClient.constructor.name}`)
         let getPatientResponse = null
         let wantedPatientInstance = null
@@ -41,9 +44,11 @@ class PatientRegistration {
         if(getPatientResponse.length != 0) {
             wantedPatientInstance = getPatientResponse.length > 1 ? tiebreak(getPatientResponse, patientJson) : getPatientResponse[0]
             console.log(`[REGISTRATION] Patient found.`)
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: sourceLabel, eventStatus: 200 })
             return wantedPatientInstance
         }
         console.log(`[REGISTRATION] No patient found.`)
+        auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: sourceLabel, eventStatus: 200 })
         return null
     }
 
@@ -51,24 +56,25 @@ class PatientRegistration {
      * Registriert einen Patienten: sucht ihn zuerst lokal und in FHIR; existiert er lokal, wird nur seine id
      * zurückgegeben; existiert er nur in FHIR, wird er lokal übernommen; existiert er nirgends, wird er neu angelegt.
      * @param {*} patientJson - Der zu registrierende Patient, muss ein name-Element mit use 'official' enthalten.
+     * @param {string} transactionId - Korreliert alle Audit-Events dieser Registrierung.
      * @returns {Promise<string>} Die (lokale) id des registrierten Patienten.
      */
-    registerPatient = async (patientJson) => {
+    registerPatient = async (patientJson, transactionId) => {
         console.log('[REGISTRATION] registerPatient called')
-        const wantedLocalPatientInstance = await this.getPatientFromDb(this.dataBaseClient, patientJson)
-        const wantedFhirPatientInstance = await this.getPatientFromDb(this.fhirClient, patientJson)
+        const wantedLocalPatientInstance = await this.getPatientFromDb(this.dataBaseClient, patientJson, transactionId, 'localSearch')
+        const wantedFhirPatientInstance = await this.getPatientFromDb(this.fhirClient, patientJson, transactionId, 'fhirSearch')
 
         let outputPatientInstance = wantedLocalPatientInstance
         // If no local patient exist, but fhir patient exists, create locla patient from fhir
         if(!outputPatientInstance && wantedFhirPatientInstance) {
             console.log('[REGISTRATION] No local patient found, creating patient from fhir')
-            return await this.createPatient(wantedFhirPatientInstance)
+            return await this.createPatient(wantedFhirPatientInstance, transactionId)
         }
 
         // If neither local, nor fhir patient exist, create new local patient from input data
         if(!outputPatientInstance && !wantedLocalPatientInstance && !wantedFhirPatientInstance) {
             console.log('[REGISTRATION] No local or fhir patient found, creating patient from input data')
-            return await this.createPatient(patientJson)
+            return await this.createPatient(patientJson, transactionId)
         }
         // If local patient exists, return its id
         console.log('[REGISTRATION] Local patient found, returning id')
@@ -79,15 +85,17 @@ class PatientRegistration {
      * Legt einen Patienten in der lokalen DB an. Vergibt eine neue id, falls noch keine vorhanden ist
      * (z.B. FHIR liefert bereits eine id mit, ein neu erfasster Patient noch nicht).
      * @param {*} patientJson - Der anzulegende Patient.
+     * @param {string} transactionId - Korreliert das emittierte Audit-Event mit der übergeordneten Transaktion.
      * @returns {Promise<string>} Die id des angelegten Patienten.
      */
-    createPatient = async (patientJson) => {
+    createPatient = async (patientJson, transactionId) => {
         console.log('[REGISTRATION] createPatient called')
         // FHIR liefert bereits eine id mit, sonst selbst eine vergeben
         if(!patientJson.id) {
             patientJson.id = randomUUID()
         }
         await this.dataBaseClient.addPatient(patientJson)
+        auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'patientCreated', eventStatus: 200 })
         return patientJson.id
     }
 }

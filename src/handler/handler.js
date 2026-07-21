@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto'
+import auditEmitter from '../audit/audit-emitter.js'
+
 /**
  * Übersetzt HTTP-Requests in Aufrufe an die Services und die Service-Ergebnisse zurück in HTTP-Responses.
  * Enthält selbst keine fachliche Logik.
@@ -26,23 +29,26 @@ class Handler {
      * Function to pass registerPatient api call to the patienti-registration-service
      * @param {*} req API Endpoint input object
      * @param {*} res Endpoint response object
-     * TBD add returnvalues
      */
     registerPatient = async (req, res) => {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const transactionId = randomUUID()
         const patientToRegisterJson = req.body //.patientJson // Der Input ist entsprechend des PatientSchema formatiert
         try {
-            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
+            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson, transactionId)
 
-            res.status(200).json({ 
+            res.status(200).json({
                 message: 'registerPatient request successfull',
                 'patientId':  registeredPatientId
             })
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'registerPatient', eventStatus: 200 })
         }
         catch (e) {
             console.log('[HANDLER]: ', e)
             // Returns either the status code of the AppError Instance or defaults to a 500 status
-            return res.status(e.statusCode ?? 500).json({ error: e.message })
+            const statusCode = e.statusCode ?? 500
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'registerPatient', eventStatus: statusCode })
+            return res.status(statusCode).json({ error: e.message })
         }
     }
 
@@ -50,18 +56,23 @@ class Handler {
      * Triggers creation of the patient in the registrationService
      * @param {*} req API Endpoint input object
      * @param {*} res Endpoint response object
+     * @param {string} transactionId - Wird intern per randomUUID() erzeugt, korreliert alle Audit-Events dieses Requests.
      * TBD add returnvalues
      */
     createPatient = async (req, res) => {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const transactionId = randomUUID()
         //TBD remove or move to other service
         try {
-            const patientCreated = await this.patRegService.createPatient(req.body)
+            const patientCreated = await this.patRegService.createPatient(req.body, transactionId)
             res.status(200).json({message: 'Patient successfully created'})
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'createPatient', eventStatus: 200 })
         }
         catch (e) {
             console.log('[HANDLER]: ', e)
-            return res.status(e.statusCode ?? 500).json({ error: e.message })
+            const statusCode = e.statusCode ?? 500
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'createPatient', eventStatus: statusCode })
+            return res.status(statusCode).json({ error: e.message })
         }
     }
 }
