@@ -102,8 +102,6 @@ class Handler {
      * Triggers creation of the patient in the registrationService
      * @param {*} req API Endpoint input object
      * @param {*} res Endpoint response object
-     * @param {string} transactionId - Wird intern per randomUUID() erzeugt, korreliert alle Audit-Events dieses Requests.
-     * TBD add returnvalues
      */
     createPatient = async (req, res) => {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
