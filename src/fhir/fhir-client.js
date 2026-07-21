@@ -25,23 +25,48 @@ class FhirClient {
         const params = new URLSearchParams(filterAttributes)
         const result = await fetch(`${this.url}/Patient?${params}`)
         if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
-        const resultJson =  await result.json()
-        if(resultJson.total === 0) {
+        const resultJson = await result.json()
+        if (resultJson.total === 0) {
             // Gibt leeres Array zurück, damit RegisterPatient weiß, dass es eine neue
             // Patientin anlegen muss. Fehler werfen würde hier die ganze Transaktion abbrechen.
             console.log('[FHIR] No patient found')
             return []
-        } 
+        }
 
         const receivedPatients = []
         for (const entry of resultJson.entry) {
             // Destrukturiert resource und zieht meta separat raus, damit es im patient nicht mehr vorhanden ist
-            const { meta, ...patient } = entry.resource 
+            const { meta, ...patient } = entry.resource
             receivedPatients.push(patient)
         }
         console.log('[FHIR] Patient(s) found, returning')
         return receivedPatients
     }
+
+    getOpenEncountersForPatient = async (patientId) => {
+        const result = await fetch(`${this.url}/Encounter?subject=Patient/${patientId}`)
+        if (!result.ok) throw new AppError(`[FHIR] Error getting open encounters... FHIR: ${result}`, result.status)
+        return await result.json()
+    }
+
+    createEncounter = async (encounter) => {
+        const result = await fetch(`${this.url}/Encounter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/fhir+json',
+            },
+            body: JSON.stringify(encounter),
+        });
+
+        if (!result.ok) {
+            throw new AppError(
+                `Could not create encounter at FHIR server. Status: ${result.status}`,
+                result.status
+            );
+        }
+
+        return await result.json();
+    };
 
     /**
      * Legt eine Patient-Ressource auf dem FHIR-Server an (POST /Patient).

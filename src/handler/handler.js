@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import AppError from '../errors/AppError.js'
 import auditEmitter from '../audit/audit-emitter.js'
 
 /**
@@ -12,9 +13,10 @@ class Handler {
      * @param {ConsentRetrieval} consentRetrievalService - Service for consent operations
      * @param {Authenticator} authenticator - Service for authentication operations
      */
-    constructor(patientRegistrationService, consentRetrievalService, authenticator) {
+    constructor(patientRegistrationService, consentRetrievalService, treatmentDocumentationService, authenticator) {
         this.patRegService = patientRegistrationService
         this.consentService = consentRetrievalService
+        this.treatmentDocumentationService = treatmentDocumentationService
         this.authenticator = authenticator
         console.log('[HANDLER] Created...')
     }
@@ -243,6 +245,23 @@ class Handler {
             return res.status(error.statusCode || 500).json({ error: error.message })
         }
     }
+
+    createEncounter = async (req, res) => {
+        try {
+            const { patientId } = req.body;
+
+            if (!patientId) {
+                return res.status(400).json({ message: 'patientId is required' });
+            }
+
+            const created = await this.treatmentDocumentationService.createOpenEncounterTransaction(patientId);
+
+            return res.status(201).json(created);
+        } catch (error) {
+            const statusCode = error.statusCode || 500;
+            return res.status(statusCode).json({ message: error.message });
+        }
+    };
 }
 
 export default Handler
