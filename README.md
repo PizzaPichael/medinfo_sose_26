@@ -44,3 +44,6 @@ Normal start up
 ```bash
 yarn start
 ```
+TODO:
+- Audit service für registration nutzen
+- Tests schreiben

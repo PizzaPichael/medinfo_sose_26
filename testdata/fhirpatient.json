@@ -1,0 +1,15 @@
+{
+    "resourceType": "Patient",
+    "id": "137202671",
+    "name": [
+        {
+        "use": "official",
+        "family": "Ramirez",
+        "given": [
+            "Carlos"
+        ]
+        }
+    ],
+    "gender": "male",
+    "birthDate": "1980-05-15"
+}
