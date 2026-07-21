@@ -604,6 +604,17 @@ class Server {
          *                       type: array
          *                       items:
          *                         type: string
+         *             example:
+         *               message: captureAnamnesis request successfull
+         *               patientId: 6a58e8e5-2bed-4aaf-b497-fab5f47a5342
+         *               created:
+         *                 conditions:
+         *                   - f086f2b6-b7ba-4cff-af97-f84133dd3a60
+         *                 medicationStatements: []
+         *               skipped:
+         *                 conditions: []
+         *                 medicationStatements:
+         *                   - http://snomed.info/sct|320176004
          *       400:
          *         description: Ungültiges Bundle oder ungültiger Consent
          *       404:
