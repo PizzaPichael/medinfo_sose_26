@@ -11,6 +11,7 @@ class FhirClient {
 
     /**
      * Sucht Patient-Ressourcen anhand beliebiger Suchparameter (z.B. { birthdate, name }).
+     * Erwartet die parameter in der Syntax, die von FHIR genutz wird, also Vorname z.B. nicht 'surName', sondern 'given'.
      * Entfernt fhir json balast und gibt nur die resource Einträge der einzelnen entry Objekte des entry
      * arrays zurück, weil diese die Patienten Instanz in unserem Schema enthalten.
      * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
@@ -25,6 +26,7 @@ class FhirClient {
         if(resultJson.total === 0) {
             // Gibt leeres Array zurück, damit RegisterPatient weiß, dass es eine neue
             // Patientin anlegen muss. Fehler werfen würde hier die ganze Transaktion abbrechen.
+            console.log('[FHIR] No patient found')
             return []
         } 
 
@@ -34,6 +36,7 @@ class FhirClient {
             const { meta, ...patient } = entry.resource 
             receivedPatients.push(patient)
         }
+        console.log('[FHIR] Patient(s) found, returning')
         return receivedPatients
     }
 
