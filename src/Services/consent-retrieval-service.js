@@ -55,11 +55,25 @@ class ConsentRetrieval {
             const consentId = this.generateConsentId()
 
             // Transform request data into schema format
+            const normalizedProvision = (consentData.provision || []).flatMap((provision) => {
+                if (provision.type && Array.isArray(provision.type)) {
+                    return provision.type
+                        .filter((entry) => entry && typeof entry === 'object')
+                        .map((entry) => ({
+                            ...(entry.period && { period: entry.period }),
+                            ...(entry.action && { action: entry.action }),
+                            ...(entry.actor && { actor: entry.actor })
+                        }))
+                }
+
+                return [provision]
+            })
+
             const consentSchemaData = {
                 consentId: consentId,
                 status: consentData.status,
                 decision: consentData.decision,
-                provision: consentData.provision || [],
+                provision: normalizedProvision,
                 
                 // Optional fields
                 ...(consentData.id && { id: consentData.id }),

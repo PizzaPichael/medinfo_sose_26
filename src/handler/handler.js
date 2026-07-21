@@ -187,7 +187,7 @@ class Handler {
             const consentSchemaData = this.consentService.buildConsentSchema(req.body)
 
             // Step 3: DB Client persists the consent to database
-            await this.dataBaseClient.saveConsent(consentSchemaData)
+            await this.consentService.dbClient.saveConsent(consentSchemaData)
             
             return res.status(201).json({ 
                 message: "Consent created successfully",
