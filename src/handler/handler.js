@@ -11,11 +11,13 @@ class Handler {
      * @param {*} patientRegistrationService - Service für Patientenregistrierung, an den registerPatient/createPatient delegieren.
      * @param {ConsentRetrieval} consentRetrievalService - Service for consent operations
      * @param {Authenticator} authenticator - Service for authentication operations
+     * @param {AnamnesisCapture} anamnesisCaptureService - Service für die Erfassung des Anamnesebogens
      */
-    constructor(patientRegistrationService, consentRetrievalService, authenticator) {
+    constructor(patientRegistrationService, consentRetrievalService, authenticator, anamnesisCaptureService) {
         this.patRegService = patientRegistrationService
         this.consentService = consentRetrievalService
         this.authenticator = authenticator
+        this.anamnesisService = anamnesisCaptureService
         console.log('[HANDLER] Created...')
     }
 
@@ -183,64 +185,33 @@ class Handler {
     }
 
     /**
-     * Checks for an existing valid consent for a patient.
-     * Handler responsibility: Accept request, validate HTTP parameters, delegate to service, return response
-     * 
-     * @param {Object} req - HTTP request with patientId in params
+     * Erfasst den Anamnesebogen (Bundle mit Conditions und MedicationStatements) für eine Patient:in.
+     * Handler responsibility: Accept request, delegate to service, return response
+     *
+     * @param {Object} req - HTTP request mit FHIR-Bundle (transaction) im Body
      * @param {Object} res - HTTP response
-     * 
+     *
      * Returns:
-     * - 200: Valid consent found
-     * - 404: Patient not found or no valid consent found
-     * - 400: Invalid patient ID format
-     * - 500: Server error
+     * - 200: Anamnese erfasst, Body enthält created- und skipped-Listen
+     * - 400: Ungültiges Bundle oder ungültiger Consent
+     * - 404: Patient:in lokal nicht vorhanden oder kein Consent
+     * - 500: Serverfehler
      */
-    checkConsent = async (req, res) => {
+    captureAnamnesis = async (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const transactionId = randomUUID()
         try {
-            const patientId = req.params.patientId
-
-            if (!patientId) {
-                return res.status(400).json({ error: "Patient ID is required" })
-            }
-
-            const consent = await this.consentService.checkConsentForPatient(patientId)
-
-            return res.status(200).json({
-                message: "Valid consent found",
-                consent
+            const result = await this.anamnesisService.captureAnamnesis(req.body, transactionId)
+            res.status(200).json({
+                message: 'captureAnamnesis request successfull',
+                ...result
             })
-        } catch (error) {
-            console.error("[HANDLER] Error checking consent:", error.message)
-            return res.status(error.statusCode || 500).json({
-                error: error.message || "Failed to check consent"
-            })
-        }
-    }
-
-    /**
-     * Creates a new consent.
-     * Handler responsibility: Accept request, validate HTTP parameters, return response
-     * Delegates to service for business logic and to db client for persistence
-     * 
-     * @param {Object} req - HTTP request with consent data in body
-     * @param {Object} res - HTTP response
-     * 
-     * Request body should contain:
-     * - status: consent status, e.g. "active" (required)
-     * - decision: "permit" or "deny" (required)
-     * - provision: array of provision objects (required)
-     * - subject: { reference: "Patient/123", display?: "Patient Name" } (required - needs patient ID)
-     * - category, controller, sourceAttachment, regulatoryBasis: (optional)
-     */
-    createConsent = async (req, res) => {
-        try {
-            const consent = await this.consentService.createConsent(req.body)
-            return res.status(201).json({
-                message: "Consent successfully created",
-                consent: consent
-            })
-        } catch (error) {
-            return res.status(error.statusCode || 500).json({ error: error.message })
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'captureAnamnesis', eventStatus: 200 })
+        } catch (e) {
+            console.log('[HANDLER]: ', e)
+            const statusCode = e.statusCode ?? 500
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'captureAnamnesis', eventStatus: statusCode })
+            return res.status(statusCode).json({ error: e.message })
         }
     }
 }
