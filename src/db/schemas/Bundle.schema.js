@@ -2,6 +2,9 @@ import mongoose from 'mongoose'
 // MongoDB hat selber kein Schema
 // Schemata werden durch mongoose, den Treiber, gestellt
 
+/**
+ * Mongoose-Schema für ein FHIR-Bundle (z.B. eine transaction mit mehreren inline-Ressourcen und Requests).
+ */
 const bundleSchema = new mongoose.Schema({
     resourceType: String,   // "Bundle"
     type: String,           // "transaction"

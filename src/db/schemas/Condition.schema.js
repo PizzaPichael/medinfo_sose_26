@@ -2,6 +2,9 @@ import mongoose from 'mongoose'
 // MongoDB hat selber kein Schema
 // Schemata werden durch mongoose, den Treiber, gestellt
 
+/**
+ * Mongoose-Schema für eine FHIR-Condition-Ressource (Diagnose/Befund).
+ */
 const conditionSchema = new mongoose.Schema({
     resourceType: String,   // "Condition"
     id: String,             // "98068728"

@@ -1,8 +1,11 @@
+/**
+ * Übersetzt HTTP-Requests in Aufrufe an die Services und die Service-Ergebnisse zurück in HTTP-Responses.
+ * Enthält selbst keine fachliche Logik.
+ */
 class Handler {
 
     /**
-     * Constructor
-     * @param {*} patientRegistrationService
+     * @param {*} patientRegistrationService - Service für Patientenregistrierung, an den registerPatient/createPatient delegieren.
      */
     constructor(patientRegistrationService) {
         this.patRegService = patientRegistrationService
@@ -53,7 +56,7 @@ class Handler {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
         //TBD remove or move to other service
         try {
-            const patientCreated = await this.patRegService.addPatient(req.body)
+            const patientCreated = await this.patRegService.createPatient(req.body)
             res.status(200).json({message: 'Patient successfully created'})
         }
         catch (e) {

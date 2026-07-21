@@ -2,8 +2,10 @@ import mongoose from 'mongoose'
 import Patient from './schemas/Patient.schema.js'
 import AppError from '../errors/AppError.js'
 
-// Übersetzt FHIR-Suchparameter-Namen in die lokalen Mongo-Feldpfade.
-// Attribute ohne Eintrag werden unverändert als Feldname übernommen (z.B. gender, active).
+/**
+ * Übersetzt FHIR-Suchparameter-Namen in die lokalen Mongo-Feldpfade.
+ * Attribute ohne Eintrag werden unverändert als Feldname übernommen (z.B. gender, active).
+ */
 const fhirToMongoField = {
     family: 'name.family',
     given: 'name.given',
@@ -18,6 +20,11 @@ const fhirToMongoField = {
     language: 'communication.language.coding.code'
 }
 
+/**
+ * Baut einen Mongo-Filter aus FHIR-Suchparameter-Namen, via fhirToMongoField.
+ * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { family: 'Ramirez', birthdate: '1974-05-12' }.
+ * @returns {Object} Filter-Objekt mit Mongo-Feldpfaden als Keys, z.B. { 'name.family': 'Ramirez', birthDate: '1974-05-12' }.
+ */
 export const buildMongoFilter = (filterAttributes) => {
     const mongoFilter = {}
     for (const [key, value] of Object.entries(filterAttributes)) {
@@ -26,12 +33,22 @@ export const buildMongoFilter = (filterAttributes) => {
     return mongoFilter
 }
 
+/**
+ * Client für Zugriff auf die lokale MongoDB (Suche und Anlegen/Aktualisieren von Patient-Dokumenten).
+ */
 class DataBaseClient {
+    /**
+     * @param {string} url - Mongo-Connection-String, z.B. 'mongodb://localhost:27017/docAndProcedures'.
+     */
     constructor(url) {
         this.url = url
         console.log('[DB] DB-Client created...')
     }
 
+    /**
+     * Baut die Mongoose-Verbindung zur konfigurierten URL auf.
+     * @returns {Promise<void>}
+     */
     connect = async () => {
         try {
             await mongoose.connect(this.url)
@@ -42,11 +59,20 @@ class DataBaseClient {
         }
     }
 
+    /**
+     * Trennt die Mongoose-Verbindung.
+     * @returns {Promise<void>}
+     */
     endConnection = async () => {
         await mongoose.disconnect()
         console.log('[DB] Disconnected...')
     }
-    
+
+    /**
+     * Legt ein neues Patient-Dokument in der lokalen DB an.
+     * @param {Object} schemaInstance - Patient-Objekt nach dem Patient-Schema.
+     * @returns {Promise<void>}
+     */
     addPatient = async (schemaInstance) => {
         console.log('[DB] addPatient called')
         try {
@@ -59,6 +85,11 @@ class DataBaseClient {
         }
     }
 
+    /**
+     * Sucht Patient-Dokumente in der lokalen DB anhand FHIR-benannter Suchparameter.
+     * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { family: 'Ramirez', birthdate: '1974-05-12' }.
+     * @returns {Promise<Object[]>} Array mit gefundenen Patienten-Dokumenten (leer, falls keins passt).
+     */
     getPatientByFilter = async (filterAttributes) => {
         console.log('[DB] getPatientByFilter called')
         try {
@@ -70,36 +101,6 @@ class DataBaseClient {
         catch (e){
             console.log('[DB] Error getting patient by filter...', e)
             throw new AppError(`[DB] Error getting patient by filter... MongooseError: ${e}`, 500)
-        }
-    }
-
-    getPatientByDbId = async (id) => {
-        console.log('[DB] getPatientByDbId called')
-        try {
-            return await Patient.findById(id)  // z.B. '652f...'
-        }
-        catch (e){
-            console.log('[DB] Error getting patient by db id...', e)
-            throw new AppError(`[DB] Error getting patient by db id... MongooseError: ${e}`, 500)
-        }
-    }
-
-    updatePatientById = async (id, patientSchemaInstance) => {
-        console.log('[DB] updatePatientById called')
-        try {
-           const result = await Patient.updateOne(
-                { id: id },
-                { $set: patientSchemaInstance }
-            )
-            if(result.matchedCount === 0) {
-                console.log('[DB] No patient with this id found...')
-                throw new AppError('[DB] No patient with this id found', 404)
-            }
-            return result
-        } catch (e) {
-            console.log('[DB] Error updating patient by id...', e)
-            if (e instanceof AppError) throw e
-            throw new AppError(`[DB] Error updating patient by id... MongooseError: ${e}`, 500)
         }
     }
 }

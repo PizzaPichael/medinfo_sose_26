@@ -87,6 +87,9 @@ import swaggerSpec from './swagger.js'
  * It is solely responsible for wiring the API endpoints to functions inside the handler.
  */
 class Server {
+    /**
+     * @param {*} handler - Handler, dessen Funktionen an die API-Routen gebunden werden.
+     */
     constructor(handler) {
         this.app = express()
         this.app.use(express.json())

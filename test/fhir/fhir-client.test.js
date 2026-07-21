@@ -44,26 +44,4 @@ describe('FhirClient', () => {
             )
         })
     })
-
-    describe('putNewPatient', () => {
-        it('returns the saved patient on success', async (t) => {
-            const savedPatient = { id: 'patient-1', resourceType: 'Patient' }
-            t.mock.method(globalThis, 'fetch', async () => fakeFetchResponse({ json: savedPatient }))
-            const client = new FhirClient('https://fhir.example.org')
-
-            const result = await client.putNewPatient({ id: 'patient-1' })
-
-            assert.deepStrictEqual(result, savedPatient)
-        })
-
-        it('throws an AppError with the FHIR status when the request fails', async (t) => {
-            t.mock.method(globalThis, 'fetch', async () => fakeFetchResponse({ ok: false, status: 500, json: {} }))
-            const client = new FhirClient('https://fhir.example.org')
-
-            await assert.rejects(
-                () => client.putNewPatient({ id: 'patient-1' }),
-                (e) => e instanceof AppError && e.statusCode === 500
-            )
-        })
-    })
 })

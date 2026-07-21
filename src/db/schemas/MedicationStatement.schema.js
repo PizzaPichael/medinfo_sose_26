@@ -2,7 +2,10 @@ import mongoose from 'mongoose'
 // MongoDB hat selber kein Schema
 // Schemata werden durch mongoose, den Treiber, gestellt
 
-const conditionSchema = new mongoose.Schema({
+/**
+ * Mongoose-Schema für eine FHIR-MedicationStatement-Ressource (Medikamenteneinnahme).
+ */
+const medicationStatementSchema = new mongoose.Schema({
     resourceType: String,   // "MedicationStatement"
     id: String,             // "123836474"
     identifier: [
@@ -99,4 +102,4 @@ const conditionSchema = new mongoose.Schema({
     ]
 })
 
-export default mongoose.model('Condition', conditionSchema)
+export default mongoose.model('MedicationStatement', medicationStatementSchema)

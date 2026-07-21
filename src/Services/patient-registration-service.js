@@ -3,15 +3,29 @@ import AppError from '../errors/AppError.js'
 
 const tiebreaker = ['maritalStatus', 'address', 'telecom']
 
+/**
+ * Service zur Registrierung von Patienten am Empfang: prüft lokale DB und FHIR-Server auf existierende
+ * Patienten und legt bei Bedarf einen neuen lokalen Patienten an.
+ */
 class PatientRegistration {
 
+    /**
+     * @param {*} localDbClient - Client für Zugriff auf die lokale DB (implementiert getPatientByFilter, addPatient).
+     * @param {*} fhirClient - Client für Zugriff auf den FHIR-Server (implementiert getPatientByFilter).
+     */
     constructor(localDbClient, fhirClient) {
         this.dataBaseClient = localDbClient
         this.fhirClient = fhirClient
         console.log('[PATIENT-REGISTRATION] Created...')
     }
 
-    
+    /**
+     * Sucht einen Patienten anhand seines offiziellen Namens und Geburtsdatums bei einem gegebenen Client.
+     * Bei mehreren Treffern wird der eindeutige Patient über tiebreak() ermittelt.
+     * @param {*} dbClient - Client (lokale DB oder FHIR), der getPatientByFilter implementiert.
+     * @param {*} patientJson - Der zu registrierende Patient, muss ein name-Element mit use 'official' enthalten.
+     * @returns {Promise<Object|null>} Der gefundene Patient oder null, falls keiner existiert.
+     */
     getPatientFromDb = async (dbClient, patientJson) => {
         console.log(`[REGISTRATION] getPatientFromDb called with ${dbClient.constructor.name}`)
         let getPatientResponse = null
@@ -34,9 +48,10 @@ class PatientRegistration {
     }
 
     /**
-     * 
-     * @param {*} patientJson 
-     * @returns 
+     * Registriert einen Patienten: sucht ihn zuerst lokal und in FHIR; existiert er lokal, wird nur seine id
+     * zurückgegeben; existiert er nur in FHIR, wird er lokal übernommen; existiert er nirgends, wird er neu angelegt.
+     * @param {*} patientJson - Der zu registrierende Patient, muss ein name-Element mit use 'official' enthalten.
+     * @returns {Promise<string>} Die (lokale) id des registrierten Patienten.
      */
     registerPatient = async (patientJson) => {
         console.log('[REGISTRATION] registerPatient called')
@@ -60,6 +75,12 @@ class PatientRegistration {
         return outputPatientInstance.id
     }
 
+    /**
+     * Legt einen Patienten in der lokalen DB an. Vergibt eine neue id, falls noch keine vorhanden ist
+     * (z.B. FHIR liefert bereits eine id mit, ein neu erfasster Patient noch nicht).
+     * @param {*} patientJson - Der anzulegende Patient.
+     * @returns {Promise<string>} Die id des angelegten Patienten.
+     */
     createPatient = async (patientJson) => {
         console.log('[REGISTRATION] createPatient called')
         // FHIR liefert bereits eine id mit, sonst selbst eine vergeben

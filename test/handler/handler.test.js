@@ -62,20 +62,20 @@ describe('Handler', () => {
     })
 
     it('createPatient() responds with 200 on success', async () => {
-        const addPatient = mock.fn(async () => {})
-        const handler = new Handler({ addPatient })
+        const createPatient = mock.fn(async () => '12345')
+        const handler = new Handler({ createPatient })
         const req = { body: { id: '12345' } }
         const res = fakeRes()
 
         await handler.createPatient(req, res)
 
-        assert.strictEqual(addPatient.mock.callCount(), 1)
+        assert.strictEqual(createPatient.mock.callCount(), 1)
         assert.strictEqual(res.status.mock.calls[0].arguments[0], 200)
     })
 
     it('createPatient() maps AppError statusCode to the response', async () => {
-        const addPatient = mock.fn(async () => { throw new AppError('db down', 503) })
-        const handler = new Handler({ addPatient })
+        const createPatient = mock.fn(async () => { throw new AppError('db down', 503) })
+        const handler = new Handler({ createPatient })
         const req = { body: {} }
         const res = fakeRes()
 

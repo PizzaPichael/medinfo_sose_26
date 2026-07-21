@@ -2,6 +2,9 @@ import mongoose from 'mongoose'
 // MongoDB hat selber kein Schema
 // Schemata werden durch mongoose, den Treiber, gestellt
 
+/**
+ * Mongoose-Schema für eine FHIR-Patient-Ressource.
+ */
 const patientSchema = new mongoose.Schema({
     resourceType: String,   // "Patient"
     id: String,             // "131896579"

@@ -4,6 +4,9 @@ import AppError from '../errors/AppError.js'
  * Client für Zugriff auf einen FHIR-Server (Suche und Anlegen/Aktualisieren von Patient-Ressourcen).
  */
 class FhirClient {
+    /**
+     * @param {string} fhirServerUrl - Basis-URL des FHIR-Servers, z.B. 'https://hapi.fhir.org/baseR4'.
+     */
     constructor(fhirServerUrl) {
         this.url = fhirServerUrl
         console.log('[FHIR] Fhir-Client created...')
@@ -38,24 +41,6 @@ class FhirClient {
         }
         console.log('[FHIR] Patient(s) found, returning')
         return receivedPatients
-    }
-
-    /**
-     * Legt eine Patient-Ressource mit gegebener ID an oder aktualisiert sie vollständig (FHIR PUT/Update).
-     * @param {Object} patient - FHIR-Patient-Ressource nach dem patientSchema, muss `id` enthalten.
-     * @returns {Promise<Object>} Die vom Server gespeicherte Patient-Ressource.
-     */
-    putNewPatient = async (patient) => {
-        console.log('[FHIR] putNewPatient called')
-        const result = await fetch(`${this.url}/Patient/${patient.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/fhir+json'
-            },
-            body: JSON.stringify(patient)
-        })
-        if (!result.ok) throw new AppError(`[FHIR] Error creating new patient... FHIR: ${result}`, result.status)
-        return await result.json()
     }
 }
 
