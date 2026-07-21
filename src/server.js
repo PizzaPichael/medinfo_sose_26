@@ -236,6 +236,36 @@ import swaggerSpec from './swagger.js'
  *         subject:
  *           type: object
  *           description: Referenz auf Patient, z.B. Patient/123
+ *     ProcedureUploadRequest:
+ *       type: object
+ *       required:
+ *         - patientId
+ *         - procedure
+ *       properties:
+ *         patientId:
+ *           type: string
+ *           description: Lokale Patient-ID, die im System bekannt ist
+ *         procedure:
+ *           type: object
+ *           description: FHIR Procedure-Resource, die an den FHIR-Server übertragen werden soll
+ *           properties:
+ *             resourceType:
+ *               type: string
+ *               example: Procedure
+ *             id:
+ *               type: string
+ *             status:
+ *               type: string
+ *               example: completed
+ *             code:
+ *               type: object
+ *             subject:
+ *               $ref: '#/components/schemas/Reference'
+ *             encounter:
+ *               $ref: '#/components/schemas/Reference'
+ *             occurrenceDateTime:
+ *               type: string
+ *               format: date-time
  */
 
 /**
@@ -473,6 +503,31 @@ class Server {
          *         description: Encounter erstellt
          */
         this.app.post('/encounter', handler.createEncounter)
+
+        /**
+         * @openapi
+         * /procedure:
+         *   post:
+         *     security:
+         *       - bearerAuth: []
+         *     summary: Upload einer FHIR Procedure-Resource für einen bestehenden Patienten und aktiven Encounter
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/ProcedureUploadRequest'
+         *     responses:
+         *       201:
+         *         description: Procedure erfolgreich erstellt
+         *       400:
+         *         description: Ungültige Anfrage
+         *       404:
+         *         description: Patient oder Encounter nicht gefunden
+         *       409:
+         *         description: Encounter ist nicht in-progress
+         */
+        this.app.post('/procedure', handler.createProcedure)
 
         console.log('[SERVER] Routes bound...')
     }
