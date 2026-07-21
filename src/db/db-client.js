@@ -1,17 +1,18 @@
 import mongoose from 'mongoose'
 import Patient from './schemas/Patient.schema.js'
 
-class DataBase {
+class DataBaseClient {
     constructor(url) {
         this.url = url
-        console.log('[DB] Connected...')
+        console.log('[DB] DB-Client created...')
     }
 
     connect = async () => {
         try {
             await mongoose.connect(this.url)
+            console.log('[DB] Connected...')
         } catch (e) {
-            console.log('[DB] Connected...', e);
+            console.log('[DB] Connection failed...', e);
         }
     }
 
@@ -73,4 +74,4 @@ updatePatientById
     }
 }
 
-export default DataBase
+export default DataBaseClient
