@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import AppError from '../errors/AppError.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, '.env') });
+const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.env');
+dotenv.config({ path: envPath });
 
 const publicKey = process.env.PUBLIC_KEY;
 const privateKey = process.env.PRIVATE_KEY;
@@ -18,6 +17,16 @@ const AUDIENCE = 'http://localhost:3000';
  * Inspired by: https://generate-random.org/jwt-tokens/javascript
  */
 class Authenticator {
+
+    verifyUserCredentials(username, password) {
+        const envUsername = process.env.TEST_USERNAME;
+        const envPassword = process.env.TEST_PASSWORD;
+
+        if (username === envUsername && password === envPassword) {
+            return { user_id: process.env.USER_ID, role: process.env.ROLE };
+        }
+        throw new AppError('Invalid username or password', 401);
+    }
 
     // Create token payload
     createTokenPayload(user_id, username, role) {
@@ -31,13 +40,18 @@ class Authenticator {
 
     // Generate JWT with options
     generateToken(payload) {
-        const token = jwt.sign(payload, privateKey, {
-            algorithm: 'HS256',
-            expiresIn: '1h',
-            issuer: ISSUER,
-            audience: AUDIENCE
-        });
-        return token;
+        try {
+            const token = jwt.sign(payload, privateKey, {
+                algorithm: 'HS256',
+                expiresIn: '1h',
+                issuer: ISSUER,
+                audience: AUDIENCE
+            });
+            return token;
+        } catch (error) {
+            console.error('Token generation failed:', error);
+            throw new AppError('Token generation failed', 500);
+        }
     }
 
     verifyToken(token) {
@@ -46,7 +60,7 @@ class Authenticator {
             return decoded;
         } catch (error) {
             console.error('Token verification failed:', error);
-            throw new Error('Invalid token');
+            throw new AppError('Invalid token', 401);
         }
     }
 

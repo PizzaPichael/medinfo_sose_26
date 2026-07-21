@@ -112,12 +112,12 @@ class Server {
          *           schema:
          *             type: object
          *             properties:
-         *               userId:
-         *                 type: string
-         *                 description: Die ID des Benutzers
          *               username:
          *                 type: string
          *                 description: Der Benutzername des Benutzers
+         *               password:
+         *                 type: string
+         *                 description: Das Passwort des Benutzers
          *     responses:
          *       200:
          *         description: JWT-Token zurückgegeben

@@ -59,9 +59,17 @@ class Handler {
     }
 
     login = (req, res) => {
-        const { user_id, username } = req.body;
-        const role = 'user';
-        const payload = this.authenticator.createTokenPayload(user_id, username, role);
+        const { username, password } = req.body;
+
+        let userId;
+        let role;
+
+        try {
+            ({ user_id: userId, role } = this.authenticator.verifyUserCredentials(username, password));
+        } catch (error) {
+            return res.status(error.statusCode || 401).json({ message: error.message });
+        }
+        const payload = this.authenticator.createTokenPayload(userId, username, role);
         const token = this.authenticator.generateToken(payload);
         res.status(200).json({ token: token });
     }
