@@ -474,6 +474,31 @@ class Server {
          */
         this.app.post('/encounter', handler.createEncounter)
 
+        /**
+         * @openapi
+         * /encounter/{encounterId}/close:
+         *   put:
+         *     security:
+         *       - bearerAuth: []
+         *     summary: Schließt einen offenen Encounter
+         *     parameters:
+         *       - name: encounterId
+         *         in: path
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Encounter geschlossen
+         *       400:
+         *         description: Ungültige Anfrage
+         *       404:
+         *         description: Encounter nicht gefunden
+         *       500:
+         *         description: Serverfehler
+         */
+        this.app.put('/encounter/:encounterId/close', handler.closeEncounter)
+
         console.log('[SERVER] Routes bound...')
     }
 

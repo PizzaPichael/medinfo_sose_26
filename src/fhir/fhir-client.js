@@ -67,6 +67,21 @@ class FhirClient {
 
         return await result.json();
     };
+
+    getEncounterById = async (encounterId) => {
+        return await fetch(`${this.url}/Encounter/${encounterId}`);
+    }
+
+    updateEncounter = async (encounterId, encounter) => {
+        const result = await fetch(`${this.url}/Encounter/${encounterId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/fhir+json',
+            },
+            body: JSON.stringify(encounter),
+        });
+        return await result;
+    }
 }
 
 export default FhirClient

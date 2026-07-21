@@ -5,7 +5,8 @@
 Generate the RSA keypair (no OpenSSL needed):
 
 ```bash
-node ./src/auth/gen-jwt-keys.mjs
+cd ./src/auth/
+node gen-jwt-keys.mjs
 ```
 
 This creates:
@@ -47,6 +48,10 @@ Normal start up
 ```bash
 yarn start
 ```
+
+## Test the API in the browser with Swagger
+
+http://localhost:3000/api-docs/
 
 ## Run tests
 

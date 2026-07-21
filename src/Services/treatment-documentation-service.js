@@ -41,6 +41,27 @@ class TreatmentDocumentationService {
         return await this.fhirClient.createEncounter(encounter);
     };
 
+    closeEncounterTransaction = async (encounterId) => {
+        const encounter = await this.fhirClient.getEncounterById(encounterId);
+
+        if (!encounter) {
+            throw new AppError(`Encounter ${encounterId} not found.`, 404);
+        }
+        if (encounter.status !== 'in-progress') {
+            throw new AppError(
+                `Encounter ${encounterId} is not in-progress and cannot be closed.`,
+                400
+            );
+        }
+
+        encounter.status = 'completed';
+
+        encounter.period.end = new Date().toISOString();
+
+        return await this.fhirClient.updateEncounter(encounterId, encounter);
+
+    }
+
 }
 
 export default TreatmentDocumentationService
