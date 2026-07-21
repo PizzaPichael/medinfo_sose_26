@@ -178,14 +178,20 @@ class Handler {
 
     createEncounter = async (req, res) => {
         try {
-            const { patientId } = req.body
-            const encounter = await this.treatmentDocumentationService.createOpenEncounterTransaction(patientId)
-            res.status(201).json(encounter)
+            const { patientId } = req.body;
+
+            if (!patientId) {
+                return res.status(400).json({ message: 'patientId is required' });
+            }
+
+            const created = await this.treatmentDocumentationService.createOpenEncounterTransaction(patientId);
+
+            return res.status(201).json(created);
         } catch (error) {
-            const statusCode = error.statusCode || 500
-            res.status(statusCode).json({ message: error.message })
+            const statusCode = error.statusCode || 500;
+            return res.status(statusCode).json({ message: error.message });
         }
-    }
+    };
 }
 
 export default Handler

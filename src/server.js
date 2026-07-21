@@ -456,6 +456,8 @@ class Server {
          * @openapi
          * /encounter:
          *   post:
+         *     security:
+         *       - bearerAuth: []
          *     summary: Erstellt einen offenen Encounter für einen bestehenden Patienten
          *     requestBody:
          *       required: true
