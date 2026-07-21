@@ -1,58 +1,100 @@
+# MedInfo SoSe 26 — Slice C: Behandlungsdokumentation & Prozeduren
+
+KIS-Modul für Patientenaufnahme, DSGVO-Consent, Anamnesebogen und Encounter-Dokumentation.
+REST-API auf Node.js/Express mit lokaler MongoDB und Anbindung an den öffentlichen HAPI-FHIR-Server.
+
+Architektur- und Designentscheidungen: siehe [PLANUNG.md](PLANUNG.md).
+
 # Setup
 
-## 0. Setup Environment Variables
+## 0. Voraussetzungen
 
-Generate the RSA keypair (no OpenSSL needed):
+- Node.js (Projekt entwickelt mit Node 22)
+- Docker (für die lokale MongoDB)
+- Yarn 4 (bei installiertem Node reicht einmalig `corepack enable`, die Version kommt aus `package.json`)
+
+## 1. Dependencies installieren
 
 ```bash
-node ./src/auth/gen-jwt-keys.mjs
+yarn install
 ```
 
-This creates:
-- `private.pem`
-- `public.pem`
+## 2. JWT-Keys und Environment Variables einrichten
 
-Add them to your `.env` **in `src/auth/`**:
+RSA-Schlüsselpaar generieren (kein OpenSSL nötig), im Ordner `src/auth/` ausführen, damit die pem-Dateien dort landen:
+
+```bash
+cd src/auth
+node gen-jwt-keys.mjs
+cd ../..
+```
+
+Das erzeugt `private.pem` und `public.pem` in `src/auth/`.
+
+Danach eine Datei `.env` **in `src/auth/`** anlegen mit folgendem Inhalt:
 
 ```env
 PRIVATE_KEY_PATH=private.pem
 PUBLIC_KEY_PATH=public.pem
-```
-
-Then make sure your `private.pem` and `public.pem` files are located in the same folder (`src/auth/`) as your `.env`.
-
-Also add user data to your `.env` like this:
-```env
 TEST_USERNAME=<username>
 TEST_PASSWORD=<password>
 USER_ID=<id>
 ROLE='user'
 ```
 
-## 1. Start the mongod db
+`TEST_USERNAME`/`TEST_PASSWORD` sind die Zugangsdaten für den `/login`-Endpoint (frei wählbar, es gibt keine Benutzerdatenbank).
+`.env` und `.pem`-Dateien sind über `.gitignore` ausgeschlossen und dürfen nicht committet werden.
+
+## 3. MongoDB starten
 
 ```bash
 yarn mongo
 ```
 
-## 2. Start the app 
+Startet einen Mongo-Container auf Port 27017, die Daten liegen im Ordner `database/` des Repos.
+Der Container muss laufen, bevor die App gestartet wird, sonst schlägt der Verbindungsaufbau fehl.
+Die App legt automatisch zwei Datenbanken an: `docAndProcedures` (Fachdaten) und `audit` (Audit-Events).
 
-Dev mode:
+## 4. App starten
+
+Dev-Modus (Neustart bei Dateiänderung):
+
 ```bash
 yarn dev
 ```
 
-Normal start up
+Normaler Start:
 
 ```bash
 yarn start
 ```
 
-## Run tests
+Der Server läuft auf `http://localhost:3000`.
+
+## 5. Tests ausführen
 
 ```bash
 yarn test
 ```
-TODO:
-- Audit service für registration nutzen
-- Tests schreiben
+
+Läuft über den eingebauten `node:test`-Runner, braucht weder laufende MongoDB noch FHIR-Erreichbarkeit (alles gemockt).
+
+# API benutzen
+
+Interaktive API-Doku mit Beispiel-Requests: `http://localhost:3000/api-docs`
+
+Alle Endpoints außer `/ping` und `/login` brauchen ein Bearer-Token. Typischer Ablauf:
+
+1. `POST /login` mit `{ "username": ..., "password": ... }` aus der `.env` → Token aus der Response kopieren
+2. Token als Header `Authorization: Bearer <token>` bei allen weiteren Requests mitschicken
+3. `POST /registerPatient` → legt Patient:in lokal und in FHIR an, liefert `patientId`
+4. `POST /consent` → DSGVO-Einwilligung für die Patient:in anlegen
+5. `POST /anamnesis` → Anamnesebogen als FHIR-Bundle (transaction) erfassen
+6. `POST /encounter` → offenen Encounter anlegen
+
+Beispiel-Bodies für alle Requests stehen in der Swagger-UI.
+
+# Hinweise
+
+- Der FHIR-Server ist der öffentliche HAPI-Testserver (`https://hapi.fhir.org/baseR4`), dort angelegte Testdaten sind für alle sichtbar.
+- Fällt die Audit-DB aus, puffert die App Audit-Events in `audit-queue.ndjson` im Projektroot und trägt sie automatisch nach, sobald die DB wieder erreichbar ist. Die Datei ist gitignored.
