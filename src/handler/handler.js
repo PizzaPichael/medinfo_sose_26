@@ -234,6 +234,18 @@ class Handler {
         }
     };
 
+    closeEncounter = async (req, res) => {
+        try {
+            const { encounterId } = req.body;
+            const updated = await this.treatmentDocumentationService.closeEncounterTransaction(encounterId);
+
+            return res.status(200).json(updated);
+        } catch (error) {
+            const statusCode = error.statusCode || 500;
+            return res.status(statusCode).json({ message: error.message });
+        }
+    };
+  
     createProcedure = async (req, res) => {
         try {
             const { patientId, procedure } = req.body;
@@ -250,7 +262,7 @@ class Handler {
             const statusCode = error.statusCode || 500;
             return res.status(statusCode).json({ message: error.message });
         }
-    };
+    }
 }
 
 export default Handler
