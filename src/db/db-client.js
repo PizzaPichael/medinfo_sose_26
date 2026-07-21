@@ -1,6 +1,8 @@
 import mongoose from 'mongoose'
 import Patient from './schemas/Patient.schema.js'
 import Consent from './schemas/Consent.schema.js'
+import Condition from './schemas/Condition.schema.js'
+import MedicationStatement from './schemas/MedicationStatement.schema.js'
 import AppError from '../errors/AppError.js'
 
 /**
@@ -140,9 +142,73 @@ class DataBaseClient {
     }
 
     /**
+     * Legt ein neues Condition-Dokument in der lokalen DB an.
+     * @param {Object} schemaInstance - Condition-Objekt nach dem Condition-Schema.
+     * @returns {Promise<void>}
+     */
+    addCondition = async (schemaInstance) => {
+        console.log('[DB] addCondition called')
+        try {
+            const condition = new Condition(schemaInstance)
+            await condition.save()
+            console.log('[DB] Condition created...')
+        } catch (e) {
+            console.log('[DB] Something went wrong creating a condition...', e)
+            throw new AppError(`[DB] Something went wrong creating a condition... MongooseError: ${e}`, 500)
+        }
+    }
+
+    /**
+     * Legt ein neues MedicationStatement-Dokument in der lokalen DB an.
+     * @param {Object} schemaInstance - MedicationStatement-Objekt nach dem MedicationStatement-Schema.
+     * @returns {Promise<void>}
+     */
+    addMedicationStatement = async (schemaInstance) => {
+        console.log('[DB] addMedicationStatement called')
+        try {
+            const medicationStatement = new MedicationStatement(schemaInstance)
+            await medicationStatement.save()
+            console.log('[DB] MedicationStatement created...')
+        } catch (e) {
+            console.log('[DB] Something went wrong creating a medication statement...', e)
+            throw new AppError(`[DB] Something went wrong creating a medication statement... MongooseError: ${e}`, 500)
+        }
+    }
+
+    /**
+     * Sucht alle Condition-Dokumente einer Patient:in in der lokalen DB.
+     * @param {string} patientId - Die lokale Patient-id (ohne 'Patient/'-Präfix).
+     * @returns {Promise<Object[]>} Array mit gefundenen Conditions (leer, falls keine existieren).
+     */
+    getConditionsByPatientId = async (patientId) => {
+        console.log('[DB] getConditionsByPatientId called')
+        try {
+            return await Condition.find({ 'subject.reference': `Patient/${patientId}` }).lean()
+        } catch (e) {
+            console.log('[DB] Error getting conditions by patient ID...', e)
+            throw new AppError(`[DB] Error getting conditions by patient ID... MongooseError: ${e}`, 500)
+        }
+    }
+
+    /**
+     * Sucht alle MedicationStatement-Dokumente einer Patient:in in der lokalen DB.
+     * @param {string} patientId - Die lokale Patient-id (ohne 'Patient/'-Präfix).
+     * @returns {Promise<Object[]>} Array mit gefundenen MedicationStatements (leer, falls keine existieren).
+     */
+    getMedicationStatementsByPatientId = async (patientId) => {
+        console.log('[DB] getMedicationStatementsByPatientId called')
+        try {
+            return await MedicationStatement.find({ 'subject.reference': `Patient/${patientId}` }).lean()
+        } catch (e) {
+            console.log('[DB] Error getting medication statements by patient ID...', e)
+            throw new AppError(`[DB] Error getting medication statements by patient ID... MongooseError: ${e}`, 500)
+        }
+    }
+
+    /**
      * Saves a consent schema instance to the database
      * DB Client responsibility: Handle all database operations
-     * 
+     *
      * @param {Object} schemaInstance - Consent object matching Consent schema
      * @returns {Object} The created consent document
      * @throws {Error} If database operation fails
