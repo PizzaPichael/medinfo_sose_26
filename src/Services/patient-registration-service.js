@@ -13,31 +13,23 @@ class PatientRegistration {
 
     
     getPatientFromDb = async (dbClient, patientJson) => {
-        console.log('[REGISTRATION] getPatientFromDb called')
+        console.log(`[REGISTRATION] getPatientFromDb called with ${dbClient.constructor.name}`)
         let getPatientResponse = null
         let wantedPatientInstance = null
         // Get the name of the patient to register that is saved as its official name
         const official = patientJson.name.find(name => name.use == 'official')
         const filterAttributes = {
-            'familyName': official.family,
-            'surName': official.given[0],
-            'birthDate': patientJson.birthDate
+            'family': official.family,
+            'given': official.given[0],
+            'birthdate': patientJson.birthDate
         }
-        getPatientResponse = await dbClient.getPatientByFilter(
-            {
-                'name.family': filterAttributes.familyName,
-                'name.given': filterAttributes.surName,
-                'birthDate': filterAttributes.birthDate
-            }
-        )
-        if(getPatientResponse != null) {
-            if(getPatientResponse.length > 1){
-                wantedPatientInstance = tiebreak(getPatientResponse, patientJson)
-            } else {
-                wantedPatientInstance = getPatientResponse[0]
-            }
+        getPatientResponse = await dbClient.getPatientByFilter(filterAttributes)
+        if(getPatientResponse.length != 0) {
+            wantedPatientInstance = getPatientResponse.length > 1 ? tiebreak(getPatientResponse, patientJson) : getPatientResponse[0]
+            console.log(`[REGISTRATION] Patient found.`)
             return wantedPatientInstance
         }
+        console.log(`[REGISTRATION] No patient found.`)
         return null
     }
 
@@ -54,14 +46,17 @@ class PatientRegistration {
         let outputPatientInstance = wantedLocalPatientInstance
         // If no local patient exist, but fhir patient exists, create locla patient from fhir
         if(!outputPatientInstance && wantedFhirPatientInstance) {
+            console.log('[REGISTRATION] No local patient found, creating patient from fhir')
             return await this.createPatient(wantedFhirPatientInstance)
         }
 
         // If neither local, nor fhir patient exist, create new local patient from input data
         if(!outputPatientInstance && !wantedLocalPatientInstance && !wantedFhirPatientInstance) {
+            console.log('[REGISTRATION] No local or fhir patient found, creating patient from input data')
             return await this.createPatient(patientJson)
         }
         // If local patient exists, return its id
+        console.log('[REGISTRATION] Local patient found, returning id')
         return outputPatientInstance.id
     }
 
