@@ -81,6 +81,24 @@ class FhirClient {
             body: JSON.stringify(encounter),
         });
         return await result;
+    /**
+     * Legt eine Patient-Ressource auf dem FHIR-Server an (POST /Patient).
+     * Der FHIR-Server vergibt dabei eine eigene id; die zurückgegebene Ressource enthält diese id.
+     * Entfernt wie getPatientByFilter das meta-Element, damit die Ressource unserem Schema entspricht.
+     * @param {Object} patientJson - Der anzulegende Patient nach dem Patient-Schema.
+     * @returns {Promise<Object>} Die vom FHIR-Server angelegte Patient-Ressource inkl. vergebener id.
+     */
+    createPatient = async (patientJson) => {
+        console.log('[FHIR] createPatient called')
+        const result = await fetch(`${this.url}/Patient`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/fhir+json' },
+            body: JSON.stringify(patientJson)
+        })
+        if (!result.ok) throw new AppError(`[FHIR] Error creating patient... FHIR status: ${result.status}`, result.status)
+        const { meta, ...createdPatient } = await result.json()
+        console.log('[FHIR] Patient created, returning')
+        return createdPatient
     }
 }
 

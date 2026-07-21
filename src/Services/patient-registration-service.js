@@ -71,11 +71,23 @@ class PatientRegistration {
             return await this.createPatient(wantedFhirPatientInstance, transactionId)
         }
 
-        // If neither local, nor fhir patient exist, create new local patient from input data
+        // If neither local, nor fhir patient exist, create the patient in fhir first and then locally
+        // from the fhir instance, so the local copy carries the id assigned by the fhir server
         if(!outputPatientInstance && !wantedLocalPatientInstance && !wantedFhirPatientInstance) {
-            console.log('[REGISTRATION] No local or fhir patient found, creating patient from input data')
-            return await this.createPatient(patientJson, transactionId)
+            console.log('[REGISTRATION] No local or fhir patient found, creating patient in fhir and locally')
+            const fhirCreatedPatient = await this.fhirClient.createPatient(patientJson)
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'fhirPatientCreated', eventStatus: 200 })
+            return await this.createPatient(fhirCreatedPatient, transactionId)
         }
+        // If the patient only exists locally, also create it in fhir.
+        // Mongoose-Metadaten (_id, __v) vorher entfernen, damit nur FHIR-konforme Felder gesendet werden.
+        if(wantedLocalPatientInstance && !wantedFhirPatientInstance) {
+            console.log('[REGISTRATION] Patient only found locally, creating patient in fhir')
+            const localPatientJson = JSON.parse(JSON.stringify(wantedLocalPatientInstance, (key, value) => key === '_id' || key === '__v' ? undefined : value))
+            await this.fhirClient.createPatient(localPatientJson)
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'fhirPatientCreated', eventStatus: 200 })
+        }
+
         // If local patient exists, return its id
         console.log('[REGISTRATION] Local patient found, returning id')
         return outputPatientInstance.id
