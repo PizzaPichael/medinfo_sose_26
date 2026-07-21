@@ -3,9 +3,11 @@ import PatientSchema from './db/schemas/Patient.schema.js'
 import Handler from './handler/handler.js'
 import Server from './server.js'
 import FhirClient from './fhir/fhir-client.js'
+import Authenticator from './auth/authenticator.js'
 import PatientRegistration from './Services/patient-registration-service.js'
 import AuditClient from './util/audit-client.js'
 import auditEmitter from './audit/audit-emitter.js'
+import ConsentRetrieval from './Services/consent-retrieval-service.js'
 
 /**
  * Entry point for the service "Slice C — Behandlungsdokumentation & Prozeduren"
@@ -30,11 +32,24 @@ const main = async () => {
         console.log('[APP] Audit-DB unavailable at startup, continuing without it for now...', e)
     }
 
-    // --- Setting up PatientRegsitrationService
-    const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient,)
+    // --- Setting up the audit database connection (separate DB, resilient to being unreachable)
+    const auditDbUrl = 'mongodb://localhost:27017/audit'
+    const auditClient = new AuditClient(auditDbUrl, auditEmitter)
+    try {
+        await auditClient.connect()
+    } catch (e) {
+        console.log('[APP] Audit-DB unavailable at startup, continuing without it for now...', e)
+    }
 
-    // --- Creating handler and wiring dbclient to it
-    const handler = new Handler(patientRegistrationService)
+    // --- Setting up Authenticator
+    const authenticator = new Authenticator()
+
+    // --- Setting up Services
+    const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient)
+    const consentRetrievalService = new ConsentRetrieval(databaseClient)
+
+    // --- Creating handler and wiring services to it
+    const handler = new Handler(patientRegistrationService, consentRetrievalService, authenticator)
 
     // --- Creating Server and wiring handler to it
     const server = new Server(handler)
