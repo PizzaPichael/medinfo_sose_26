@@ -32,15 +32,6 @@ const main = async () => {
         console.log('[APP] Audit-DB unavailable at startup, continuing without it for now...', e)
     }
 
-    // --- Setting up the audit database connection (separate DB, resilient to being unreachable)
-    const auditDbUrl = 'mongodb://localhost:27017/audit'
-    const auditClient = new AuditClient(auditDbUrl, auditEmitter)
-    try {
-        await auditClient.connect()
-    } catch (e) {
-        console.log('[APP] Audit-DB unavailable at startup, continuing without it for now...', e)
-    }
-
     // --- Setting up Authenticator
     const authenticator = new Authenticator()
 
