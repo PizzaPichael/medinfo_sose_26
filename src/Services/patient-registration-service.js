@@ -106,7 +106,7 @@ const tiebreak = (listOfPatientInstances, patientiToSearchFor, i = 0) => {
     // that are equal to the to-be-registered-patient, regarding the tiebreaker.
     // Only these instances are left and kept in the listOfPatientInstances.
     const filteredlistOfPatientInstances = listOfPatientInstances.filter(
-        patient => removeIdKeyFromPatientInstance(patient[currentTiebreaker]) === JSON.stringify(patientiToSearchFor[currentTiebreaker])
+        patient => removeIdKeyFromMongoosePatientAttribute(patient[currentTiebreaker]) === JSON.stringify(patientiToSearchFor[currentTiebreaker])
     )
     return tiebreak(filteredlistOfPatientInstances, patientiToSearchFor, i + 1)
 }
