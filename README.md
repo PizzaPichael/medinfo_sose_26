@@ -3,7 +3,7 @@
 KIS-Modul für Patientenaufnahme, DSGVO-Consent, Anamnesebogen und Encounter-Dokumentation.
 REST-API auf Node.js/Express mit lokaler MongoDB und Anbindung an den öffentlichen HAPI-FHIR-Server.
 
-Architektur- und Designentscheidungen: siehe [PLANUNG.md](PLANUNG.md).
+Architektur- und Designentscheidungen: siehe [PLANUNGSDOKUMENT.md](PLANUNGSDOKUMENT.md).
 
 # Setup
 

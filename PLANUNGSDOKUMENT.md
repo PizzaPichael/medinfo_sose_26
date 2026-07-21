@@ -118,7 +118,28 @@ Umsetzende: Joh
 - `/createPatient` ist funktional Teilschritt von `/registerPatient`, könnte weg
 - Token-Prüfung existiert doppelt (Middleware in `server.js` + `handler.authenticateJWT`)
 - Consent-Pfad wirft teils generische `Error` statt `AppError` → Fehler kommen dort als 500 an
-- `AppError`-Argumentreihenfolge an einzelnen Stellen vertauscht, mit TS nicht passiert
+- `AppError`-Argumentreihenfolge an einzelnen Stellen vertauscht
+
+
+### Was wir zeitlich nicht geschafft haben
+#### Anamnese
+1. FHIR-Sync der Anamnese-Daten\
+Conditions und MedicationStatements werden nur lokal gespeichert, nichts geht an FHIR. Fehlt: Prüfung, ob die Einträge in FHIR schon existieren / aktuell sind, und Push der fehlenden per transaction-Bundle  (postTransactionBundle im FhirClient existiert noch nicht, createPatient und createEncounter sind da, das generische Bundle-POST nicht).
+
+2. Encounter-Anbindung\
+/encounter existiert inzwischen als eigene Transaktion, aber die Anamnese nutzt sie nicht: kein Check/Anlegen eines offenen Encounters im Anamnese-Flow, und neue Conditions/MedicationStatements bekommen keine encounter.reference bzw. context.reference gesetzt.
+
+3. Datensparsamkeit\
+Entscheidung, welche Patientenfelder nur in FHIR liegen dürfen, steht aus, danach lokales Löschen nach
+erfolgreichem Sync. Hängt an Punkt 1, sonst Datenverlust.
+
+4. Automatisierte Tests fehlen komplett\
+test/Services/anamnesis-capture-service.test.js existiert nicht, auch
+keine Handler-Tests für captureAnamnesis und keine db-client-Tests für die 4 Condition/MedicationStatement-Methoden. Bisher nur manuell/Smoke-getestet.
+
+#### Generell
+1. Provenance\
+steht in den Vorgaben („Bei jedem Vorgang"), ist nirgends implementiert.
 
 ### Aufgabenaufteilung
 
