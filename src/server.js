@@ -236,6 +236,39 @@ import swaggerSpec from './swagger.js'
  *         subject:
  *           type: object
  *           description: Referenz auf Patient, z.B. Patient/123
+ *     AnamnesisBundle:
+ *       type: object
+ *       required:
+ *         - resourceType
+ *         - type
+ *         - entry
+ *       properties:
+ *         resourceType:
+ *           type: string
+ *           example: Bundle
+ *         type:
+ *           type: string
+ *           example: transaction
+ *         entry:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               fullUrl:
+ *                 type: string
+ *                 example: "urn:uuid:11111111-1111-1111-1111-111111111111"
+ *               resource:
+ *                 type: object
+ *                 description: Condition oder MedicationStatement mit subject.reference "Patient/{id}"
+ *               request:
+ *                 type: object
+ *                 properties:
+ *                   method:
+ *                     type: string
+ *                     example: POST
+ *                   url:
+ *                     type: string
+ *                     example: Condition
  */
 
 /**
@@ -451,6 +484,63 @@ class Server {
          *         description: Serverfehler
          */
         this.app.post('/consent', handler.createConsent)
+
+        /**
+         * @openapi
+         * /anamnesis:
+         *   post:
+         *     security:
+         *       - bearerAuth: []
+         *     summary: Erfasst den Anamnesebogen (FHIR-Bundle mit Conditions und MedicationStatements) für eine Patient:in
+         *     requestBody:
+         *       required: true
+         *       description: FHIR-Bundle vom Typ "transaction". Jede entry.resource ist eine Condition oder ein MedicationStatement und referenziert dieselbe Patient:in via subject.reference "Patient/{id}".
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/AnamnesisBundle'
+         *     responses:
+         *       200:
+         *         description: Anamnese erfasst, nur neue Einträge wurden gespeichert (Abgleich bei Bestandspatient:innen)
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         *                 patientId:
+         *                   type: string
+         *                 created:
+         *                   type: object
+         *                   properties:
+         *                     conditions:
+         *                       type: array
+         *                       items:
+         *                         type: string
+         *                     medicationStatements:
+         *                       type: array
+         *                       items:
+         *                         type: string
+         *                 skipped:
+         *                   type: object
+         *                   properties:
+         *                     conditions:
+         *                       type: array
+         *                       items:
+         *                         type: string
+         *                     medicationStatements:
+         *                       type: array
+         *                       items:
+         *                         type: string
+         *       400:
+         *         description: Ungültiges Bundle oder ungültiger Consent
+         *       404:
+         *         description: Patient:in lokal nicht vorhanden oder kein Consent
+         *       500:
+         *         description: Serverfehler
+         */
+        this.app.post('/anamnesis', handler.captureAnamnesis)
         console.log('[SERVER] Routes bound...')
     }
 
