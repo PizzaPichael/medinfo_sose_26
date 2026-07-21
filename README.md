@@ -47,6 +47,12 @@ Normal start up
 ```bash
 yarn start
 ```
+
+## Run tests
+
+```bash
+yarn test
+```
 TODO:
 - Audit service für registration nutzen
 - Tests schreiben
