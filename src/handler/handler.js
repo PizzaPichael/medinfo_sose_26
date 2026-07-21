@@ -38,12 +38,12 @@ class Handler {
     };
 
     /**
-     * Test function, wired to the /test endpoint 
+     * Test function, wired to the /ping endpoint
      * @param {*} req API endpoint input
      * @param {*} res Endpoint response
      */
-    test = (req, res) => {
-        res.status(203).json({ message: 'test Endpoint called' })
+    ping = (req, res) => {
+        res.status(203).json({ message: 'Pong' })
     }
 
     /**

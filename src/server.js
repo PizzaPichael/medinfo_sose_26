@@ -12,7 +12,7 @@ class Server {
         this.app.use(express.json())
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
         this.app.use((req, res, next) => {
-            if (req.path === '/test' || req.path === '/getCertificate' || req.path === '/login') {
+            if (req.path === '/ping' || req.path === '/getCertificate' || req.path === '/login') {
                 return next()
             }
             return handler.authenticateJWT(req, res, next)
@@ -62,7 +62,7 @@ class Server {
 
         /**
          * @openapi
-         * /test:
+         * /ping:
          *   get:
          *     summary: Testet, ob der Server erreichbar ist
          *     responses:
@@ -76,7 +76,7 @@ class Server {
          *                 message:
          *                   type: string
          */
-        this.app.get('/test', handler.test)
+        this.app.get('/ping', handler.ping)
 
         /**
         * @openapi
