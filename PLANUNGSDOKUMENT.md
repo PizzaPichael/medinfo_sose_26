@@ -107,10 +107,11 @@ Wenn Bestandspatientin, dann Abgleich: vorhandene Einträge (gleicher Code der C
 Beide Fälle sind derselbe Algorithmus, bei Neuen ist die Bestandsliste leer.
 Umsetzende: Micha
 
-#### 4. Gipsanlage (Prozedurdurchführung mit Dokumentation) — `POST /encounter` (erster Teil)
+#### 4. Gipsanlage (Prozedurdurchführung mit Dokumentation) — `POST /encounter` & `POST /procedure`(Teilweise)
 Dass Gips bekommen, wohin in welchen Raum, welche weiteren Maßnahmen getroffen.
 Encounter wird mit jeder abgeschlossenen Procedure geupdated.
-Stand: offener Encounter wird angelegt, 409 wenn schon einer `in-progress` ist. Procedure-Teil folgt.
+Stand: offener Encounter wird angelegt, 409 wenn schon einer `in-progress` ist. Procedure-Teil auch implementiert. Aber Encounter noch nicht schließbar.
+Dabei fehlen noch Checks, ob Consent gegeben ist.
 Umsetzende: Joh
 
 ### Rückblick / würden wir heute anders machen
@@ -132,8 +133,12 @@ Conditions und MedicationStatements werden nur lokal gespeichert, nichts geht an
 3. Datensparsamkeit\
 Entscheidung, welche Patientenfelder nur in FHIR liegen dürfen, steht aus, danach lokales Löschen nach
 erfolgreichem Sync. Hängt an Punkt 1, sonst Datenverlust.
+Momentan wird Consent lokal gespeichert, Encounter und Procedure nur im FHIR Server.
 
-4. Automatisierte Tests fehlen komplett\
+4. Bessere Rückgaben
+Der Encounter und Procedure Endpoint könnte noch nutzerfreundlichere Rückgaben haben, so zum Beispiel das Ausgeben des Encounters, wenn schon einer existiert.
+
+5. Automatisierte Tests fehlen komplett\
 test/Services/anamnesis-capture-service.test.js existiert nicht, auch
 keine Handler-Tests für captureAnamnesis und keine db-client-Tests für die 4 Condition/MedicationStatement-Methoden. Bisher nur manuell/Smoke-getestet.
 

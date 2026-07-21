@@ -91,6 +91,7 @@ Alle Endpoints außer `/ping` und `/login` brauchen ein Bearer-Token. Typischer 
 4. `POST /consent` → DSGVO-Einwilligung für die Patient:in anlegen
 5. `POST /anamnesis` → Anamnesebogen als FHIR-Bundle (transaction) erfassen
 6. `POST /encounter` → offenen Encounter anlegen
+7. `POST /procedure` → Procedure anlegen
 
 Beispiel-Bodies für alle Requests stehen in der Swagger-UI.
 

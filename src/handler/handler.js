@@ -244,8 +244,8 @@ class Handler {
             const statusCode = error.statusCode || 500;
             return res.status(statusCode).json({ message: error.message });
         }
-    };
-  
+    }
+
     createProcedure = async (req, res) => {
         try {
             const { patientId, procedure } = req.body;

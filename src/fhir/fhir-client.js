@@ -77,7 +77,7 @@ class FhirClient {
         }
 
         return await result.json();
-    };
+    }
 
     getEncounterById = async (encounterId) => {
         return await fetch(`${this.url}/Encounter/${encounterId}`);
@@ -92,6 +92,8 @@ class FhirClient {
             body: JSON.stringify(encounter),
         });
         return await result;
+    }
+
     createProcedure = async (procedure) => {
         const result = await fetch(`${this.url}/Procedure`, {
             method: 'POST',
@@ -109,7 +111,8 @@ class FhirClient {
         }
 
         return await result.json();
-    };
+    }
+
     /**
      * Legt eine Patient-Ressource auf dem FHIR-Server an (POST /Patient).
      * Der FHIR-Server vergibt dabei eine eigene id; die zurückgegebene Ressource enthält diese id.
