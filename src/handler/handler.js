@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto'
+import auditEmitter from '../audit/audit-emitter.js'
+
 /**
  * Übersetzt HTTP-Requests in Aufrufe an die Services und die Service-Ergebnisse zurück in HTTP-Responses.
  * Enthält selbst keine fachliche Logik.
@@ -72,23 +75,26 @@ class Handler {
      * Function to pass registerPatient api call to the patienti-registration-service
      * @param {*} req API Endpoint input object
      * @param {*} res Endpoint response object
-     * TBD add returnvalues
      */
     registerPatient = async (req, res) => {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const transactionId = randomUUID()
         const patientToRegisterJson = req.body //.patientJson // Der Input ist entsprechend des PatientSchema formatiert
         try {
-            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
+            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson, transactionId)
 
             res.status(200).json({
                 message: 'registerPatient request successfull',
                 'patientId': registeredPatientId
             })
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'registerPatient', eventStatus: 200 })
         }
         catch (e) {
             console.log('[HANDLER]: ', e)
             // Returns either the status code of the AppError Instance or defaults to a 500 status
-            return res.status(e.statusCode ?? 500).json({ error: e.message })
+            const statusCode = e.statusCode ?? 500
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'registerPatient', eventStatus: statusCode })
+            return res.status(statusCode).json({ error: e.message })
         }
     }
 
@@ -96,18 +102,83 @@ class Handler {
      * Triggers creation of the patient in the registrationService
      * @param {*} req API Endpoint input object
      * @param {*} res Endpoint response object
-     * TBD add returnvalues
      */
     createPatient = async (req, res) => {
         console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const transactionId = randomUUID()
         //TBD remove or move to other service
         try {
-            const patientCreated = await this.patRegService.createPatient(req.body)
+            const patientCreated = await this.patRegService.createPatient(req.body, transactionId)
             res.status(200).json({ message: 'Patient successfully created' })
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'createPatient', eventStatus: 200 })
         }
         catch (e) {
             console.log('[HANDLER]: ', e)
-            return res.status(e.statusCode ?? 500).json({ error: e.message })
+            const statusCode = e.statusCode ?? 500
+            auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'createPatient', eventStatus: statusCode })
+            return res.status(statusCode).json({ error: e.message })
+        }
+    }
+
+    /**
+     * Checks for an existing valid consent for a patient.
+     * Handler responsibility: Accept request, validate HTTP parameters, delegate to service, return response
+     * 
+     * @param {Object} req - HTTP request with patientId in params
+     * @param {Object} res - HTTP response
+     * 
+     * Returns:
+     * - 200: Valid consent found
+     * - 404: Patient not found or no valid consent found
+     * - 400: Invalid patient ID format
+     * - 500: Server error
+     */
+    checkConsent = async (req, res) => {
+        try {
+            const patientId = req.params.patientId
+
+            if (!patientId) {
+                return res.status(400).json({ error: "Patient ID is required" })
+            }
+
+            const consent = await this.consentService.checkConsentForPatient(patientId)
+
+            return res.status(200).json({
+                message: "Valid consent found",
+                consent
+            })
+        } catch (error) {
+            console.error("[HANDLER] Error checking consent:", error.message)
+            return res.status(error.statusCode || 500).json({
+                error: error.message || "Failed to check consent"
+            })
+        }
+    }
+
+    /**
+     * Creates a new consent.
+     * Handler responsibility: Accept request, validate HTTP parameters, return response
+     * Delegates to service for business logic and to db client for persistence
+     * 
+     * @param {Object} req - HTTP request with consent data in body
+     * @param {Object} res - HTTP response
+     * 
+     * Request body should contain:
+     * - status: consent status, e.g. "active" (required)
+     * - decision: "permit" or "deny" (required)
+     * - provision: array of provision objects (required)
+     * - subject: { reference: "Patient/123", display?: "Patient Name" } (required - needs patient ID)
+     * - category, controller, sourceAttachment, regulatoryBasis: (optional)
+     */
+    createConsent = async (req, res) => {
+        try {
+            const consent = await this.consentService.createConsent(req.body)
+            return res.status(201).json({
+                message: "Consent successfully created",
+                consent: consent
+            })
+        } catch (error) {
+            return res.status(error.statusCode || 500).json({ error: error.message })
         }
     }
 

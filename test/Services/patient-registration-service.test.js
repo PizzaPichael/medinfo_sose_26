@@ -1,6 +1,7 @@
 import { describe, it, mock } from 'node:test'
 import assert from 'node:assert'
 import PatientRegistration from '../../src/Services/patient-registration-service.js'
+import auditEmitter from '../../src/audit/audit-emitter.js'
 
 describe('PatientRegistration', () => {
     it('Successfully registers a patient which is unknown to fhir and local.', async () => {
@@ -77,6 +78,27 @@ describe('PatientRegistration', () => {
 
         assert.strictEqual(addPatient.mock.callCount(), 0)
         assert.equal(registratioSuccessfullId, 'A')
+    })
+
+    it('Emits localSearch, fhirSearch and patientCreated audit events with the same transactionId.', async (t) => {
+        const emit = t.mock.method(auditEmitter, 'emit')
+        const getPatientByFilterLocal = mock.fn(async () => [])
+        const getPatientByFilterFhir = mock.fn(async () => [])
+        const addPatient = mock.fn(async (patient) => patient)
+        const fakeDbClient = { addPatient, getPatientByFilter: getPatientByFilterLocal }
+        const fakeFhirClient = { getPatientByFilter: getPatientByFilterFhir }
+        const service = new PatientRegistration(fakeDbClient, fakeFhirClient)
+        const patientJson = { name: [{ use: 'official', family: 'Ramirez', given: ['Carlos'] }], birthDate: '1974-05-12' }
+        const transactionId = 'tx-42'
+
+        await service.registerPatient(patientJson, transactionId)
+
+        const emittedTypes = emit.mock.calls.map(call => call.arguments[1].type)
+        assert.deepStrictEqual(emittedTypes, ['localSearch', 'fhirSearch', 'patientCreated'])
+        for (const call of emit.mock.calls) {
+            assert.strictEqual(call.arguments[0], 'auditEvent')
+            assert.strictEqual(call.arguments[1].transactionId, transactionId)
+        }
     })
 
 })
