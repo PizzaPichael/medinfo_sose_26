@@ -4,6 +4,9 @@ import AppError from '../errors/AppError.js'
  * Client für Zugriff auf einen FHIR-Server (Suche und Anlegen/Aktualisieren von Patient-Ressourcen).
  */
 class FhirClient {
+    /**
+     * @param {string} fhirServerUrl - Basis-URL des FHIR-Servers, z.B. 'https://hapi.fhir.org/baseR4'.
+     */
     constructor(fhirServerUrl) {
         this.url = fhirServerUrl
         console.log('[FHIR] Fhir-Client created...')
@@ -11,31 +14,33 @@ class FhirClient {
 
     /**
      * Sucht Patient-Ressourcen anhand beliebiger Suchparameter (z.B. { birthdate, name }).
-     * @param {Object} attributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
-     * @returns {Promise<Object>} FHIR-Bundle mit den gefundenen Patienten.
+     * Erwartet die parameter in der Syntax, die von FHIR genutz wird, also Vorname z.B. nicht 'surName', sondern 'given'.
+     * Entfernt fhir json balast und gibt nur die resource Einträge der einzelnen entry Objekte des entry
+     * arrays zurück, weil diese die Patienten Instanz in unserem Schema enthalten.
+     * @param {Object} filterAttributes - Key-Value-Paare als FHIR-Suchparameter, z.B. { birthdate: '1990-01-01', name: 'Müller' }.
+     * @returns {Promise<Object>} Array mit Patienten Instanzen
      */
-    getPatientByAttribute = async (attributes) => {
-        const params = new URLSearchParams(attributes)
+    getPatientByFilter = async (filterAttributes) => {
+        console.log('[FHIR] getPatientByFilter called')
+        const params = new URLSearchParams(filterAttributes)
         const result = await fetch(`${this.url}/Patient?${params}`)
         if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
-        return await result.json()
-    }
+        const resultJson =  await result.json()
+        if(resultJson.total === 0) {
+            // Gibt leeres Array zurück, damit RegisterPatient weiß, dass es eine neue
+            // Patientin anlegen muss. Fehler werfen würde hier die ganze Transaktion abbrechen.
+            console.log('[FHIR] No patient found')
+            return []
+        } 
 
-    /**
-     * Legt eine Patient-Ressource mit gegebener ID an oder aktualisiert sie vollständig (FHIR PUT/Update).
-     * @param {Object} patient - FHIR-Patient-Ressource nach dem patientSchema, muss `id` enthalten.
-     * @returns {Promise<Object>} Die vom Server gespeicherte Patient-Ressource.
-     */
-    putNewPatient = async (patient) => {
-        const result = await fetch(`${this.url}/Patient/${patient.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/fhir+json'
-            },
-            body: JSON.stringify(patient)
-        })
-        if (!result.ok) throw new AppError(`[FHIR] Error creating new patient... FHIR: ${result}`, result.status)
-        return await result.json()
+        const receivedPatients = []
+        for (const entry of resultJson.entry) {
+            // Destrukturiert resource und zieht meta separat raus, damit es im patient nicht mehr vorhanden ist
+            const { meta, ...patient } = entry.resource 
+            receivedPatients.push(patient)
+        }
+        console.log('[FHIR] Patient(s) found, returning')
+        return receivedPatients
     }
 }
 

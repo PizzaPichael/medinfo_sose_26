@@ -3,20 +3,124 @@ import swaggerUi from 'swagger-ui-express'
 import swaggerSpec from './swagger.js'
 
 /**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Patient:
+ *       type: object
+ *       properties:
+ *         resourceType:
+ *           type: string
+ *           example: Patient
+ *         id:
+ *           type: string
+ *         identifier:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               system:
+ *                 type: string
+ *               value:
+ *                 type: string
+ *         active:
+ *           type: boolean
+ *         name:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               use:
+ *                 type: string
+ *                 example: official
+ *               family:
+ *                 type: string
+ *               given:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *         telecom:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               system:
+ *                 type: string
+ *               value:
+ *                 type: string
+ *               use:
+ *                 type: string
+ *         gender:
+ *           type: string
+ *         birthDate:
+ *           type: string
+ *           example: "1974-05-12"
+ *         address:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               use:
+ *                 type: string
+ *               line:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               city:
+ *                 type: string
+ *               state:
+ *                 type: string
+ *               postalCode:
+ *                 type: string
+ *               country:
+ *                 type: string
+ *         maritalStatus:
+ *           type: object
+ *         communication:
+ *           type: array
+ *           items:
+ *             type: object
+ *     AuthenticatedPatientRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - patient
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: JWT zur Authentifizierung
+ *         patient:
+ *           $ref: '#/components/schemas/Patient'
+ */
+
+/**
  * This is the Server class.
  * It is solely responsible for wiring the API endpoints to functions inside the handler.
  */
 class Server {
+    /**
+     * @param {*} handler - Handler, dessen Funktionen an die API-Routen gebunden werden.
+     */
     constructor(handler) {
         this.app = express()
         this.app.use(express.json())
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+        this.app.use((req, res, next) => {
+            if (req.path === '/ping' || req.path === '/login') {
+                return next()
+            }
+
+            if (req.body?.token) {
+                req.headers.authorization = `Bearer ${req.body.token}`
+            } else {
+                return res.status(401).json({ error: 'Authorization token required' })
+            }
+            return handler.authenticateJWT(req, res, next)
+        })
         this.httpServer = null
         this.#bindRoutes(handler)
         console.log('[SERVER] Created...')
-    } 
-
-    // app.use(SecurityVerification)
+    }
 
     /**
      * Wires HTTP-routes with handler-functions
@@ -25,22 +129,13 @@ class Server {
     #bindRoutes = (handler) => {
         /**
          * @openapi
-         * /registerPatient:
-         *   post:
-         *     summary: Registriert einen Patienten am Empfang
-         *     requestBody:
-         *       required: true
-         *       content:
-         *         application/json:
-         *           schema:
-         *             type: object
-         *             properties:
-         *               patientJson:
-         *                 type: object
-         *                 description: Patient-Ressource nach dem Patient-Schema
+         * /ping:
+         *   get:
+         *     deprecated: true
+         *     summary: Testet, ob der Server erreichbar ist (temporärer Debug-Endpoint, TBD Entfernen am Ende)
          *     responses:
-         *       200:
-         *         description: Registrierung akzeptiert
+         *       203:
+         *         description: Server antwortet
          *         content:
          *           application/json:
          *             schema:
@@ -49,7 +144,101 @@ class Server {
          *                 message:
          *                   type: string
          */
+        this.app.get('/ping', handler.ping)
+
+        /**
+        * @openapi
+        * tags:
+        *   - name: Authentication
+        *     description: Endpoints for user authentication and JWT handling
+        */
+
+        /**
+         * @openapi
+         * /login:
+         *   post:
+         *     tags:
+         *       - Authentication
+         *     summary: Erstellt ein JWT-Token für einen Benutzer
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               username:
+         *                 type: string
+         *                 description: Der Benutzername des Benutzers
+         *               password:
+         *                 type: string
+         *                 description: Das Passwort des Benutzers
+         *     responses:
+         *       200:
+         *         description: JWT-Token zurückgegeben
+         */
+        this.app.post('/login', handler.login)
+
+        /**
+         * @openapi
+         * /registerPatient:
+         *   post:
+         *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
+         *     requestBody:
+         *       required: true
+         *       description: Der Patient selbst als Body, muss mind. ein name-Element mit use "official" enthalten
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
+         *     responses:
+         *       200:
+         *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         *                 patientId:
+         *                   type: string
+         *       default:
+         *         description: Fehler bei der lokalen DB-Abfrage (Statuscode je nach AppError, sonst 500)
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 error:
+         *                   type: string
+         */
         this.app.post('/registerPatient', handler.registerPatient)
+
+        /**
+         * @openapi
+         * /createPatient:
+         *   post:
+         *     summary: Legt einen neuen Patienten in der lokalen DB an
+         *     requestBody:
+         *       required: true
+         *       description: Der Patient selbst als Body, nach dem Patient-Schema
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
+         *     responses:
+         *       200:
+         *         description: Patient erfolgreich angelegt
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         */
+        this.app.post('/createPatient', handler.createPatient)
         /**
          * @openapi
          * /consent/{patientId}:
@@ -94,19 +283,19 @@ class Server {
          *           schema:
          *             type: object
          *             properties:
-              *               status:
-              *                 type: string
-              *                 description: 'Einwilligungsstatus, z.B. "active"'
-              *               decision:
-              *                 type: string
-              *                 description: 'permit oder deny'
+         *               status:
+         *                 type: string
+         *                 description: 'Einwilligungsstatus, z.B. "active"'
+         *               decision:
+         *                 type: string
+         *                 description: 'permit oder deny'
          *               provision:
          *                 type: array
          *                 items:
          *                   type: object
-              *               subject:
-              *                 type: object
-              *                 description: 'Referenz auf Patient, z.B. Patient/123'
+         *               subject:
+         *                 type: object
+         *                 description: 'Referenz auf Patient, z.B. Patient/123'
          *     responses:
          *       201:
          *         description: Einwilligung erfolgreich erstellt
@@ -125,23 +314,6 @@ class Server {
          *         description: Serverfehler
          */
         this.app.post('/consent', handler.createConsent)
-        /**
-         * @openapi
-         * /test:
-         *   get:
-         *     summary: Testet, ob der Server erreichbar ist
-         *     responses:
-         *       203:
-         *         description: Server antwortet
-         *         content:
-         *           application/json:
-         *             schema:
-         *               type: object
-         *               properties:
-         *                 message:
-         *                   type: string
-         */
-        this.app.get('/test', handler.test)
         console.log('[SERVER] Routes bound...')
     }
 

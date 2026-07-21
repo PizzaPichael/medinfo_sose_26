@@ -3,6 +3,7 @@ import PatientSchema from './db/schemas/Patient.schema.js'
 import Handler from './handler/handler.js'
 import Server from './server.js'
 import FhirClient from './fhir/fhir-client.js'
+import Authenticator from './auth/authenticator.js'
 import PatientRegistration from './Services/patient-registration-service.js'
 import ConsentRetrieval from './Services/consent-retrieval-service.js'
 
@@ -20,52 +21,28 @@ const main = async () => {
     const fhirServerUrl = 'https://hapi.fhir.org/baseR4'
     const fhirClient = new FhirClient(fhirServerUrl)
 
+    // --- Setting up Authenticator
+    const authenticator = new Authenticator()
+
     // --- Setting up Services
-    const patientRegistrationService = new PatientRegistration()
+    const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient)
     const consentRetrievalService = new ConsentRetrieval(databaseClient)
 
-    // --- Creating handler and wiring dbclient to it
-    const handler = new Handler(databaseClient, fhirClient, patientRegistrationService, consentRetrievalService)
+    // --- Creating handler and wiring services to it
+    const handler = new Handler(patientRegistrationService, consentRetrievalService, authenticator)
 
     // --- Creating Server and wiring handler to it
     const server = new Server(handler)
     server.listen(3000)
 
-    /* 
-    TODO delete when not neede as reference anymore
-
-    Do stuff from here...
-    const patientSchemaInstance = new PatientSchema({
-        patientId: "3",
-        id: "131896579",
-        name: [
-            {
-                use: "official",
-                family: "Ramirez",
-                given: [
-                    "Carlos"
-                ]
-            }
-        ],
-        gender: "male",
-        birthDate: "1974-05-12",
-        address: [
-            {
-                use: "home",
-                line: [
-                    "125 Community Way"
-                ],
-                city: "Springfield",
-                state: "MA",
-                postalCode: "01109",
-                country: "US"
-            }
-        ]
+    /**
+     * Function for ending the connection to the local DB if a SIGINT = signal interruption accures.
+     */
+    process.on('SIGINT', async () => {
+        await server.close()    // Stops accepting new requests and ends it, when all running requests are finished
+        await databaseClient.endConnection()    // Ends the conenction to the db
+        process.exit(0)
     })
-    await databaseClient.addPatient(patientSchemaInstance)
-    //await database.updatePatientById(131896579, patientSchemaInstance)
-    console.log(await databaseClient.getPatientByFilter({ id: '131896579' }))
-    ...to here.*/
 }
 
 try {
