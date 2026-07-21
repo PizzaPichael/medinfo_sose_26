@@ -15,6 +15,7 @@ class Handler {
      * @param {*} res Endpoint response
      */
     test = (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
         res.status(203).json({ message: 'test Endpoint called' })
     }
 
@@ -25,6 +26,7 @@ class Handler {
      * TBD add returnvalues
      */
     registerPatient = async (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
         const patientToRegisterJson = req.body //.patientJson // Der Input ist entsprechend des PatientSchema formatiert
         try {
             const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
@@ -48,6 +50,7 @@ class Handler {
      * TBD add returnvalues
      */
     createPatient = async (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
         //TBD remove or move to other service
         try {
             const patientCreated = await this.patRegService.addPatient(req.body)

@@ -24,6 +24,7 @@ class DataBaseClient {
     }
     
     addPatient = async (schemaInstance) => {
+        console.log('[DB] addPatient called')
         try {
             const patient = new Patient(schemaInstance)
             await patient.save()
@@ -35,6 +36,7 @@ class DataBaseClient {
     }
 
     getPatientByFilter = async (filterAttributes) => {
+        console.log('[DB] getPatientByFilter called')
         try {
             return await Patient.find(filterAttributes).lean()  // .lean() → plain objects statt Mongoose-docs
         } 
@@ -45,6 +47,7 @@ class DataBaseClient {
     }
 
     getPatientByDbId = async (id) => {
+        console.log('[DB] getPatientByDbId called')
         try {
             return await Patient.findById(id)  // z.B. '652f...'
         }
@@ -55,6 +58,7 @@ class DataBaseClient {
     }
 
     updatePatientById = async (id, patientSchemaInstance) => {
+        console.log('[DB] updatePatientById called')
         try {
            const result = await Patient.updateOne(
                 { id: id },

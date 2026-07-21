@@ -17,6 +17,7 @@ class FhirClient {
      * @returns {Promise<Object>} Array mit Patienten Instanzen
      */
     getPatientByFilter = async (filterAttributes) => {
+        console.log('[FHIR] getPatientByFilter called')
         const params = new URLSearchParams(filterAttributes)
         const result = await fetch(`${this.url}/Patient?${params}`)
         if (!result.ok) throw new AppError(`[FHIR] Error getting patient by attribute... FHIR: ${result}`, result.status)
@@ -29,7 +30,9 @@ class FhirClient {
 
         const receivedPatients = []
         for (const entry of resultJson.entry) {
-            receivedPatients.push(entry.resource)
+            // Destrukturiert resource und zieht meta separat raus, damit es im patient nicht mehr vorhanden ist
+            const { meta, ...patient } = entry.resource 
+            receivedPatients.push(patient)
         }
         return receivedPatients
     }
@@ -40,6 +43,7 @@ class FhirClient {
      * @returns {Promise<Object>} Die vom Server gespeicherte Patient-Ressource.
      */
     putNewPatient = async (patient) => {
+        console.log('[FHIR] putNewPatient called')
         const result = await fetch(`${this.url}/Patient/${patient.id}`, {
             method: 'PUT',
             headers: {

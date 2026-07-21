@@ -13,6 +13,7 @@ class PatientRegistration {
 
     
     getPatientFromDb = async (dbClient, patientJson) => {
+        console.log('[REGISTRATION] getPatientFromDb called')
         let getPatientResponse = null
         let wantedPatientInstance = null
         // Get the name of the patient to register that is saved as its official name
@@ -22,7 +23,6 @@ class PatientRegistration {
             'surName': official.given[0],
             'birthDate': patientJson.birthDate
         }
-        console.log(`filterAttributes: `, filterAttributes)
         getPatientResponse = await dbClient.getPatientByFilter(
             {
                 'name.family': filterAttributes.familyName,
@@ -30,8 +30,6 @@ class PatientRegistration {
                 'birthDate': filterAttributes.birthDate
             }
         )
-        console.log(`getPatientResponse: `, getPatientResponse)
-
         if(getPatientResponse != null) {
             if(getPatientResponse.length > 1){
                 wantedPatientInstance = tiebreak(getPatientResponse, patientJson)
@@ -48,7 +46,8 @@ class PatientRegistration {
      * @param {*} patientJson 
      * @returns 
      */
-    registerPatient = async (patientJson) => {     
+    registerPatient = async (patientJson) => {
+        console.log('[REGISTRATION] registerPatient called')
         const wantedLocalPatientInstance = await this.getPatientFromDb(this.dataBaseClient, patientJson)
         const wantedFhirPatientInstance = await this.getPatientFromDb(this.fhirClient, patientJson)
 
@@ -67,6 +66,7 @@ class PatientRegistration {
     }
 
     createPatient = async (patientJson) => {
+        console.log('[REGISTRATION] createPatient called')
         // FHIR liefert bereits eine id mit, sonst selbst eine vergeben
         if(!patientJson.id) {
             patientJson.id = randomUUID()
@@ -87,18 +87,18 @@ class PatientRegistration {
  *                                      - A recursive call of itself
  */
 const tiebreak = (listOfPatientInstances, patientiToSearchFor, i = 0) => {
-    console.log('[REGISTRATION TIEBREAKER] Started')
+    console.log('[REGISTRATION]  started')
     if(listOfPatientInstances.length == 1) {
         console.log('[REGISTRATION TIEBREAKER] Unique patient found')
         return listOfPatientInstances[0]
     }
     if(i >= tiebreaker.length) {
-        console.log('[REGISTRATION TIEBREAKER] Ran out of tiebreakers. No unique patient found')
+        console.log('[REGISTRATION] Tiebreaker ran out of tiebreakers. No unique patient found')
         throw new AppError('[REGISTRATION TIEBREAKER] Ran out of tiebreakers. No unique patient found', 400)
     }
 
     const currentTiebreaker = tiebreaker[i]
-    console.log('[REGISTRATION TIEBREAKER] Filtering by tiebreaker', currentTiebreaker)
+    console.log('[REGISTRATION] Tiebreaker filtering by tiebreaker', currentTiebreaker)
 
     // The next line is a function, that removes the mongoose '_id' value from an attribute of
     // a patient instance, that mongoose has returned to us from the db.
