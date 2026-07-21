@@ -42,7 +42,7 @@ FHIR-Operationen:
 
 ### Grundarchitektur
 
-Wir sind eine API, keine CLI (Antwort auf Frage an Denny). Clients im Praktikum: Postman und Swagger-UI (`/api-docs`). Gegenüber dem öffentlichen HAPI-FHIR-Server (`https://hapi.fhir.org/baseR4`) sind wir selbst Client.
+Wir sind eine API. Unsere Clients: Postman und Swagger-UI (`/api-docs`). Gegenüber dem öffentlichen HAPI-FHIR-Server (`https://hapi.fhir.org/baseR4`) sind wir selbst Client.
 
 Aufbau als Schichten, jeder Request läuft denselben Weg:
 
@@ -59,10 +59,10 @@ Beide Clients implementieren `getPatientByFilter` mit denselben FHIR-Suchparamet
 
 ### Technologien
 
-- **Node.js + Express 5**, ES Modules. JavaScript statt TypeScript: kein Build-Schritt, Gruppe war damit schneller. Nachteil: ein paar Laufzeitfehler, die TS gefunden hätte. Kompromiss: JSDoc an allen Funktionen.
+- **Node.js + Express 5**, ES Modules. JavaScript, JSDoc an allen Funktionen.
 - **Yarn 4** mit `nodeLinker: node-modules`
-- **`node:test`** statt Jest: eingebaut, reicht, hält Dependencies kurz
-- **swagger-jsdoc + swagger-ui-express**: Doku direkt an den Routen, bleibt eher aktuell. Rückblick: Kommentarblöcke in `server.js` sind lang geworden, auslagern wäre sauberer.
+- **`node:test`**
+- **swagger-jsdoc + swagger-ui-express**: Doku direkt an den Routen. Rückblick: Kommentarblöcke in `server.js` sind lang geworden, auslagern wäre sauberer.
 - **JWT (RS256)** via `jsonwebtoken`. Schlüsselpaar lokal generiert (`src/auth/gen-jwt-keys.mjs`), Testbenutzer aus `.env`. Keine Benutzer-DB, wäre für den Umfang übertrieben. Alle Routen außer `/ping` und `/login` brauchen Bearer-Token.
 
 ### Datenhaltung
@@ -120,12 +120,17 @@ Umsetzende: Joh
 - Consent-Pfad wirft teils generische `Error` statt `AppError` → Fehler kommen dort als 500 an
 - `AppError`-Argumentreihenfolge an einzelnen Stellen vertauscht, mit TS nicht passiert
 
-### Aufgaben vom 19.06. - Bis nächstes mal 26.06.
+### Aufgabenaufteilung
 
 - das Transaktionsdiagramm erstellen für jede Transaktion 
-- die FHIR Endpoints für jede Transaktion auflisten 
-- Notwendige interne Funktionen umschreiben (Was soll die Funktion machen, z.B. Datenbankzugriff)
-- Schemata für unsere Resources definieren (and FHIR orientieren)
+    - Pateinten Checkin (Micha)
+    - Anamnese erstellen (Micha)
+    - Consent abfragen (Joh)
+    - Gipsanlage (Joh)
+- Transaktionen implementieren
+- Authentification (Joh)
+- Audit (Micha)
+- Schemata für unsere Resources definieren (an FHIR orientieren)
     Resourcen:
     - Patient (Micha)    
     - Condition (Micha)  
@@ -133,10 +138,3 @@ Umsetzende: Joh
     - Consent (Joh)
     - Encounter (Joh)
     - Procedure (Joh)
-
-### Fragen an Denny
-- ~~Stellen wir eine API bereit für unseren Service?~~ → ja, REST-API
-- ~~Oder sind wir eine CLI?~~ → nein
-- ~~Existieren Bundles über Transaktionen hinaus? Also werden sie als Instanzen in der DB gespeichert? Oder leben sie nur so lange, wie die Transaktion lebt?~~ → nur während der Transaktion, keine Persistenz
-- Werden Provenance Instanzen auch in der AuditDB gespeichert?
-- Dürfen wir auch das Wiki als Planungsdokument angeben?
