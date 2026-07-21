@@ -121,7 +121,7 @@ Umsetzende: Joh
 - `AppError`-Argumentreihenfolge an einzelnen Stellen vertauscht
 
 
-### Was woir zeitlich nicht geschafft haben
+### Was wir zeitlich nicht geschafft haben
 #### Anamnese
 1. FHIR-Sync der Anamnese-Daten\
 Conditions und MedicationStatements werden nur lokal gespeichert, nichts geht an FHIR. Fehlt: Prüfung, ob die Einträge in FHIR schon existieren / aktuell sind, und Push der fehlenden per transaction-Bundle  (postTransactionBundle im FhirClient existiert noch nicht, createPatient und createEncounter sind da, das generische Bundle-POST nicht).
