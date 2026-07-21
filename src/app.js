@@ -5,6 +5,7 @@ import Server from './server.js'
 import FhirClient from './fhir/fhir-client.js'
 import Authenticator from './auth/authenticator.js'
 import PatientRegistration from './Services/patient-registration-service.js'
+import ConsentRetrieval from './Services/consent-retrieval-service.js'
 
 /**
  * Entry point for the service "Slice C — Behandlungsdokumentation & Prozeduren"
@@ -23,11 +24,12 @@ const main = async () => {
     // --- Setting up Authenticator
     const authenticator = new Authenticator()
 
-    // --- Setting up PatientRegsitrationService
-    const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient,)
+    // --- Setting up Services
+    const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient)
+    const consentRetrievalService = new ConsentRetrieval(databaseClient)
 
-    // --- Creating handler and wiring dbclient to it
-    const handler = new Handler(patientRegistrationService, authenticator)
+    // --- Creating handler and wiring services to it
+    const handler = new Handler(patientRegistrationService, consentRetrievalService, authenticator)
 
     // --- Creating Server and wiring handler to it
     const server = new Server(handler)

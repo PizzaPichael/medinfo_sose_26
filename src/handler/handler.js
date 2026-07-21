@@ -6,9 +6,12 @@ class Handler {
 
     /**
      * @param {*} patientRegistrationService - Service für Patientenregistrierung, an den registerPatient/createPatient delegieren.
+     * @param {ConsentRetrieval} consentRetrievalService - Service for consent operations
+     * @param {Authenticator} authenticator - Service for authentication operations
      */
-    constructor(patientRegistrationService, authenticator) {
+    constructor(patientRegistrationService, consentRetrievalService, authenticator) {
         this.patRegService = patientRegistrationService
+        this.consentService = consentRetrievalService
         this.authenticator = authenticator
         console.log('[HANDLER] Created...')
     }
@@ -105,6 +108,68 @@ class Handler {
         catch (e) {
             console.log('[HANDLER]: ', e)
             return res.status(e.statusCode ?? 500).json({ error: e.message })
+        }
+    }
+
+    /**
+     * Checks for an existing valid consent for a patient.
+     * Handler responsibility: Accept request, validate HTTP parameters, delegate to service, return response
+     * 
+     * @param {Object} req - HTTP request with patientId in params
+     * @param {Object} res - HTTP response
+     * 
+     * Returns:
+     * - 200: Valid consent found
+     * - 404: Patient not found or no valid consent found
+     * - 400: Invalid patient ID format
+     * - 500: Server error
+     */
+    checkConsent = async (req, res) => {
+        try {
+            const patientId = req.params.patientId
+
+            if (!patientId) {
+                return res.status(400).json({ error: "Patient ID is required" })
+            }
+
+            const consent = await this.consentService.checkConsentForPatient(patientId)
+
+            return res.status(200).json({
+                message: "Valid consent found",
+                consent
+            })
+        } catch (error) {
+            console.error("[HANDLER] Error checking consent:", error.message)
+            return res.status(error.statusCode || 500).json({
+                error: error.message || "Failed to check consent"
+            })
+        }
+    }
+
+    /**
+     * Creates a new consent.
+     * Handler responsibility: Accept request, validate HTTP parameters, return response
+     * Delegates to service for business logic and to db client for persistence
+     * 
+     * @param {Object} req - HTTP request with consent data in body
+     * @param {Object} res - HTTP response
+     * 
+     * Request body should contain:
+     * - status: consent status, e.g. "active" (required)
+     * - decision: "permit" or "deny" (required)
+     * - provision: array of provision objects (required)
+     * - subject: { reference: "Patient/123", display?: "Patient Name" } (required - needs patient ID)
+     * - category, controller, sourceAttachment, regulatoryBasis: (optional)
+     */
+    createConsent = async (req, res) => {
+        try {
+            const consent = await this.consentService.createConsent(req.body)
+            return res.status(201).json({
+                message: "Consent successfully created",
+                consent: consent
+            })
+        } catch (error) {
+            return res.status(error.statusCode || 500).json({ error: error.message })
         }
     }
 }
