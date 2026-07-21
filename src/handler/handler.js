@@ -11,6 +11,7 @@ class Handler {
     /**
      * @param {*} patientRegistrationService - Service für Patientenregistrierung, an den registerPatient/createPatient delegieren.
      * @param {ConsentRetrieval} consentRetrievalService - Service for consent operations
+     * @param {*} treatmentDocumentationService - Service für Behandlungsdokumentation, an den Encounter/Prozeduren delegieren
      * @param {Authenticator} authenticator - Service for authentication operations
      * @param {AnamnesisCapture} anamnesisCaptureService - Service für die Erfassung des Anamnesebogens
      */
@@ -204,7 +205,7 @@ class Handler {
         try {
             const result = await this.anamnesisService.captureAnamnesis(req.body, transactionId)
             res.status(200).json({
-                message: 'captureAnamnesis request successfull',
+                message: 'captureAnamnesis request successful',
                 ...result
             })
             auditEmitter.emit('auditEvent', { transactionId, timestamp: new Date().toISOString(), type: 'captureAnamnesis', eventStatus: 200 })

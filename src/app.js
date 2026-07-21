@@ -9,7 +9,6 @@ import ConsentRetrieval from './Services/consent-retrieval-service.js'
 import TreatmentDocumentationService from './Services/treatment-documentation-service.js'
 import AuditClient from './util/audit-client.js'
 import auditEmitter from './audit/audit-emitter.js'
-import ConsentRetrieval from './Services/consent-retrieval-service.js'
 import AnamnesisCapture from './Services/anamnesis-capture-service.js'
 
 

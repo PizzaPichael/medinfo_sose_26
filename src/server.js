@@ -605,7 +605,7 @@ class Server {
          *                       items:
          *                         type: string
          *             example:
-         *               message: captureAnamnesis request successfull
+         *               message: captureAnamnesis request successful
          *               patientId: 6a58e8e5-2bed-4aaf-b497-fab5f47a5342
          *               created:
          *                 conditions:
