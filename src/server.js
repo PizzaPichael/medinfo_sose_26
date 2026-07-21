@@ -361,7 +361,7 @@ class Server {
          *   post:
          *     security:
          *       - bearerAuth: []
-         *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
+         *     summary: Sucht einen Patienten anhand des offiziellen Namens und Geburtsdatums lokal und registriert ihn am Empfang
          *     requestBody:
          *       required: true
          *       description: Der Patient selbst als Body, muss mind. ein name-Element mit use "official" enthalten
@@ -369,6 +369,28 @@ class Server {
          *         application/json:
          *           schema:
          *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
+         *           example:
+         *             resourceType: Patient
+         *             active: true
+         *             name:
+         *               - use: official
+         *                 family: Ramirez
+         *                 given:
+         *                   - Carlos
+         *             telecom:
+         *               - system: phone
+         *                 value: "+49 170 1234567"
+         *                 use: mobile
+         *             gender: male
+         *             birthDate: "1974-05-12"
+         *             address:
+         *               - use: home
+         *                 line:
+         *                   - Musterstraße 12
+         *                 city: Münster
+         *                 state: NRW
+         *                 postalCode: "48149"
+         *                 country: DE
          *     responses:
          *       200:
          *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
@@ -381,6 +403,9 @@ class Server {
          *                   type: string
          *                 patientId:
          *                   type: string
+         *             example:
+         *               message: registerPatient request successfull
+         *               patientId: 6a58e8e5-2bed-4aaf-b497-fab5f47a5342
          *       default:
          *         description: Fehler bei der lokalen DB-Abfrage (Statuscode je nach AppError, sonst 500)
          *         content:
@@ -499,6 +524,52 @@ class Server {
          *         application/json:
          *           schema:
          *             $ref: '#/components/schemas/AnamnesisBundle'
+         *           example:
+         *             resourceType: Bundle
+         *             type: transaction
+         *             entry:
+         *               - fullUrl: "urn:uuid:11111111-1111-1111-1111-111111111111"
+         *                 resource:
+         *                   resourceType: Condition
+         *                   clinicalStatus:
+         *                     coding:
+         *                       - system: http://terminology.hl7.org/CodeSystem/condition-clinical
+         *                         code: active
+         *                   verificationStatus:
+         *                     coding:
+         *                       - system: http://terminology.hl7.org/CodeSystem/condition-ver-status
+         *                         code: confirmed
+         *                   code:
+         *                     coding:
+         *                       - system: http://snomed.info/sct
+         *                         code: "195967001"
+         *                         display: Asthma
+         *                     text: Asthma bronchiale
+         *                   subject:
+         *                     reference: Patient/6a58e8e5-2bed-4aaf-b497-fab5f47a5342
+         *                   onsetDateTime: "2015-06-01"
+         *                   recordedDate: "2026-07-21"
+         *                 request:
+         *                   method: POST
+         *                   url: Condition
+         *               - fullUrl: "urn:uuid:22222222-2222-2222-2222-222222222222"
+         *                 resource:
+         *                   resourceType: MedicationStatement
+         *                   status: active
+         *                   medicationCodeableConcept:
+         *                     coding:
+         *                       - system: http://snomed.info/sct
+         *                         code: "320176004"
+         *                         display: salbutamol 100micrograms/inhaler
+         *                     text: Salbutamol Dosieraerosol
+         *                   subject:
+         *                     reference: Patient/6a58e8e5-2bed-4aaf-b497-fab5f47a5342
+         *                   effectiveDateTime: "2026-07-21"
+         *                   dosage:
+         *                     - text: 2 Hübe bei Bedarf, max. alle 4 Stunden
+         *                 request:
+         *                   method: POST
+         *                   url: MedicationStatement
          *     responses:
          *       200:
          *         description: Anamnese erfasst, nur neue Einträge wurden gespeichert (Abgleich bei Bestandspatient:innen)
