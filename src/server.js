@@ -451,6 +451,29 @@ class Server {
          *         description: Serverfehler
          */
         this.app.post('/consent', handler.createConsent)
+
+        /**
+         * @openapi
+         * /encounter:
+         *   post:
+         *     security:
+         *       - bearerAuth: []
+         *     summary: Erstellt einen offenen Encounter für einen bestehenden Patienten
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               patientId:
+         *                 type: string
+         *     responses:
+         *       201:
+         *         description: Encounter erstellt
+         */
+        this.app.post('/encounter', handler.createEncounter)
+
         console.log('[SERVER] Routes bound...')
     }
 
