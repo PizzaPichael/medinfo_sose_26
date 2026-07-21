@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import Authenticator from './authenticator.js';
+import Authenticator from '../../src/auth/authenticator.js';
 
 test('loads the public key from the local .env file', () => {
   const authenticator = new Authenticator();
