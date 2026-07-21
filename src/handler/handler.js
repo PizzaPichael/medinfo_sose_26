@@ -233,6 +233,24 @@ class Handler {
             return res.status(statusCode).json({ message: error.message });
         }
     };
+
+    createProcedure = async (req, res) => {
+        try {
+            const { patientId, procedure } = req.body;
+            const procedurePayload = procedure || req.body;
+
+            if (!procedurePayload || procedurePayload.resourceType !== 'Procedure') {
+                return res.status(400).json({ message: 'procedure is required' });
+            }
+
+            const created = await this.treatmentDocumentationService.createProcedureTransaction(patientId, procedurePayload);
+
+            return res.status(201).json(created);
+        } catch (error) {
+            const statusCode = error.statusCode || 500;
+            return res.status(statusCode).json({ message: error.message });
+        }
+    };
 }
 
 export default Handler
