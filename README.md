@@ -18,3 +18,9 @@ Normal start up
 ```bash
 yarn start
 ```
+
+## Run tests
+
+```bash
+yarn test
+```
