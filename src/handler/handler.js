@@ -186,7 +186,6 @@ class Handler {
 
     /**
      * Erfasst den Anamnesebogen (Bundle mit Conditions und MedicationStatements) für eine Patient:in.
-     * Handler responsibility: Accept request, delegate to service, return response
      *
      * @param {Object} req - HTTP request mit FHIR-Bundle (transaction) im Body
      * @param {Object} res - HTTP response
