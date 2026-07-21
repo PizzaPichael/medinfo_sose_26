@@ -80,6 +80,17 @@ import swaggerSpec from './swagger.js'
  *           type: array
  *           items:
  *             type: object
+ *     AuthenticatedPatientRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - patient
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: JWT zur Authentifizierung
+ *         patient:
+ *           $ref: '#/components/schemas/Patient'
  */
 
 /**
@@ -94,18 +105,80 @@ class Server {
         this.app = express()
         this.app.use(express.json())
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+        this.app.use((req, res, next) => {
+            if (req.path === '/ping' || req.path === '/login') {
+                return next()
+            }
+
+            if (req.body?.token) {
+                req.headers.authorization = `Bearer ${req.body.token}`
+            } else {
+                return res.status(401).json({ error: 'Authorization token required' })
+            }
+            return handler.authenticateJWT(req, res, next)
+        })
         this.httpServer = null
         this.#bindRoutes(handler)
         console.log('[SERVER] Created...')
-    } 
-
-    // app.use(SecurityVerification)
+    }
 
     /**
      * Wires HTTP-routes with handler-functions
      * @param {*} handler the handler, whose functions the api endpoints should be wired to
      */
     #bindRoutes = (handler) => {
+        /**
+         * @openapi
+         * /ping:
+         *   get:
+         *     deprecated: true
+         *     summary: Testet, ob der Server erreichbar ist (temporärer Debug-Endpoint, TBD Entfernen am Ende)
+         *     responses:
+         *       203:
+         *         description: Server antwortet
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         */
+        this.app.get('/ping', handler.ping)
+
+        /**
+        * @openapi
+        * tags:
+        *   - name: Authentication
+        *     description: Endpoints for user authentication and JWT handling
+        */
+
+        /**
+         * @openapi
+         * /login:
+         *   post:
+         *     tags:
+         *       - Authentication
+         *     summary: Erstellt ein JWT-Token für einen Benutzer
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               username:
+         *                 type: string
+         *                 description: Der Benutzername des Benutzers
+         *               password:
+         *                 type: string
+         *                 description: Das Passwort des Benutzers
+         *     responses:
+         *       200:
+         *         description: JWT-Token zurückgegeben
+         */
+        this.app.post('/login', handler.login)
+
         /**
          * @openapi
          * /registerPatient:
@@ -117,7 +190,7 @@ class Server {
          *       content:
          *         application/json:
          *           schema:
-         *             $ref: '#/components/schemas/Patient'
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
          *     responses:
          *       200:
          *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
@@ -144,24 +217,6 @@ class Server {
 
         /**
          * @openapi
-         * /test:
-         *   get:
-         *     deprecated: true
-         *     summary: Testet, ob der Server erreichbar ist (temporärer Debug-Endpoint, TBD Entfernen am Ende)
-         *     responses:
-         *       203:
-         *         description: Server antwortet
-         *         content:
-         *           application/json:
-         *             schema:
-         *               type: object
-         *               properties:
-         *                 message:
-         *                   type: string
-         */
-        this.app.get('/test', handler.test)
-        /**
-         * @openapi
          * /createPatient:
          *   post:
          *     summary: Legt einen neuen Patienten in der lokalen DB an
@@ -171,7 +226,7 @@ class Server {
          *       content:
          *         application/json:
          *           schema:
-         *             $ref: '#/components/schemas/Patient'
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
          *     responses:
          *       200:
          *         description: Patient erfolgreich angelegt

@@ -13,15 +13,15 @@ const fakeRes = () => {
 }
 
 describe('Handler', () => {
-    it('test() responds with 203 and a message', () => {
+    it('ping() responds with 203 and a message', () => {
         const handler = new Handler({})
         const req = {}
         const res = fakeRes()
 
-        handler.test(req, res)
+        handler.ping(req, res)
 
         assert.strictEqual(res.status.mock.calls[0].arguments[0], 203)
-        assert.strictEqual(res.jsonBody.message, 'test Endpoint called')
+        assert.strictEqual(res.jsonBody.message, 'Pong')
     })
 
     it('registerPatient() responds with 200 and the patientId on success', async () => {

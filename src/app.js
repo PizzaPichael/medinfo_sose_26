@@ -3,6 +3,7 @@ import PatientSchema from './db/schemas/Patient.schema.js'
 import Handler from './handler/handler.js'
 import Server from './server.js'
 import FhirClient from './fhir/fhir-client.js'
+import Authenticator from './auth/authenticator.js'
 import PatientRegistration from './Services/patient-registration-service.js'
 
 /**
@@ -19,11 +20,14 @@ const main = async () => {
     const fhirServerUrl = 'https://hapi.fhir.org/baseR4'
     const fhirClient = new FhirClient(fhirServerUrl)
 
+    // --- Setting up Authenticator
+    const authenticator = new Authenticator()
+
     // --- Setting up PatientRegsitrationService
     const patientRegistrationService = new PatientRegistration(databaseClient, fhirClient,)
 
     // --- Creating handler and wiring dbclient to it
-    const handler = new Handler(patientRegistrationService)
+    const handler = new Handler(patientRegistrationService, authenticator)
 
     // --- Creating Server and wiring handler to it
     const server = new Server(handler)
