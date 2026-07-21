@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import AppError from '../errors/AppError.js'
 
 /**
  * Consent Retrieval Service
@@ -16,6 +17,19 @@ class ConsentRetrieval {
     constructor(dbClient) {
         this.dbClient = dbClient
         console.log('[CONSENT SERVICE] Created...')
+    }
+
+    createConsent = async (consentData) => {
+        try {
+            // Step 1: Service transforms request body into schema format and validates
+            const consentSchemaData = this.buildConsentSchema(consentData)
+            // Step 2: DB Client persists the consent to database
+            await this.dbClient.saveConsent(consentSchemaData)
+            return consentSchemaData
+        } catch (error) {
+            console.error('[CONSENT SERVICE] Error creating consent:', error.message)
+            throw new AppError(500, 'Failed to create consent', error)
+        }
     }
 
     /**
@@ -54,27 +68,12 @@ class ConsentRetrieval {
             // Generate consentId
             const consentId = this.generateConsentId()
 
-            // Transform request data into schema format
-            const normalizedProvision = (consentData.provision || []).flatMap((provision) => {
-                if (provision.type && Array.isArray(provision.type)) {
-                    return provision.type
-                        .filter((entry) => entry && typeof entry === 'object')
-                        .map((entry) => ({
-                            ...(entry.period && { period: entry.period }),
-                            ...(entry.action && { action: entry.action }),
-                            ...(entry.actor && { actor: entry.actor })
-                        }))
-                }
-
-                return [provision]
-            })
-
             const consentSchemaData = {
                 consentId: consentId,
                 status: consentData.status,
                 decision: consentData.decision,
-                provision: normalizedProvision,
-                
+                period: consentData.period,
+
                 // Optional fields
                 ...(consentData.id && { id: consentData.id }),
                 ...(consentData.text && { text: consentData.text }),
@@ -90,7 +89,7 @@ class ConsentRetrieval {
             return consentSchemaData
         } catch (error) {
             console.error('[CONSENT SERVICE] Error building consent schema:', error.message)
-            throw error
+            throw new AppError(400, 'Invalid consent data')
         }
     }
 
@@ -102,27 +101,34 @@ class ConsentRetrieval {
      * @throws {Error} If validation fails
      */
     validateConsentData = (consentData) => {
-        const requiredFields = ['status', 'decision', 'provision', 'subject']
-        
+        const requiredFields = ['status', 'decision', 'subject']
+
         for (const field of requiredFields) {
             if (!consentData[field]) {
-                throw new Error(`Missing required field: ${field}`)
+                throw new AppError(`Missing required field: ${field}`, 400)
             }
         }
 
         // Validate subject has reference (patient ID)
         if (!consentData.subject || !consentData.subject.reference) {
-            throw new Error('subject.reference (patient ID) is required')
+            throw new AppError('subject.reference (patient ID) is required', 400)
         }
 
         // Validate decision is either "permit" or "deny"
         if (!['permit', 'deny'].includes(consentData.decision)) {
-            throw new Error('decision must be either "permit" or "deny"')
+            throw new AppError('decision must be either "permit" or "deny"', 400)
         }
 
-        // Validate provision is an array
-        if (!Array.isArray(consentData.provision)) {
-            throw new Error('provision must be an array')
+        if (consentData.period && (!consentData.period.start || !consentData.period.end)) {
+            throw new AppError('period.start and period.end are required', 400)
+        }
+
+        if (consentData.provision && Array.isArray(consentData.provision)) {
+            for (const entry of consentData.provision) {
+                if (entry?.type && Array.isArray(entry.type) && entry.type.length > 0 && !entry.type[0]?.period) {
+                    throw new AppError('provision.type[0].period is required', 400)
+                }
+            }
         }
 
         console.log('[CONSENT SERVICE] Consent data validated successfully')
@@ -141,50 +147,53 @@ class ConsentRetrieval {
     isConsentValid = (consent) => {
         try {
             if (!consent) {
-                return { isValid: false, reason: 'No consent found' }
+                return { isValid: false, reason: 'Consent not found' }
             }
 
-            // Check status is active
             if (consent.status !== 'active') {
                 return { isValid: false, reason: `Consent status is "${consent.status}", not "active"` }
             }
 
-            // Check decision is permit
             if (consent.decision !== 'permit') {
                 return { isValid: false, reason: `Consent decision is "${consent.decision}", not "permit"` }
             }
 
-            // Check provision period validity
-            if (consent.provision && Array.isArray(consent.provision) && consent.provision.length > 0) {
-                const now = new Date()
-                let isWithinValidPeriod = false
+            const periods = []
 
+            if (consent.period && consent.period.start && consent.period.end) {
+                periods.push(consent.period)
+            }
+
+            if (consent.provision && Array.isArray(consent.provision)) {
                 for (const provision of consent.provision) {
-                    if (provision.period) {
-                        const startDate = provision.period.start ? new Date(provision.period.start) : null
-                        const endDate = provision.period.end ? new Date(provision.period.end) : null
-
-                        // Check if current date is within the provision period
-                        const afterStart = !startDate || now >= startDate
-                        const beforeEnd = !endDate || now <= endDate
-
-                        if (afterStart && beforeEnd) {
-                            isWithinValidPeriod = true
-                            break
-                        }
+                    if (provision?.period) {
+                        periods.push(provision.period)
                     }
-                }
-
-                if (!isWithinValidPeriod) {
-                    return { isValid: false, reason: 'Current date is outside the provision period' }
                 }
             }
 
+            if (periods.length === 0) {
+                return { isValid: false, reason: 'No consent period found' }
+            }
+
+            const now = new Date()
+            const isWithinValidPeriod = periods.some((period) => {
+                const startDate = period.start ? new Date(period.start) : null
+                const endDate = period.end ? new Date(period.end) : null
+                const afterStart = !startDate || now >= startDate
+                const beforeEnd = !endDate || now <= endDate
+                return afterStart && beforeEnd
+            })
+
+            if (!isWithinValidPeriod) {
+                return { isValid: false, reason: 'Current date is outside the provision period' }
+            }
+
             console.log('[CONSENT SERVICE] Consent validation passed')
-            return { isValid: true }
+            return { isValid: true, consent }
         } catch (error) {
             console.error('[CONSENT SERVICE] Error validating consent:', error.message)
-            throw error
+            return { isValid: false, reason: 'Failed to validate consent' }
         }
     }
 
@@ -197,21 +206,19 @@ class ConsentRetrieval {
      * @throws {Error} If retrieval or validation fails
      */
     checkConsentForPatient = async (patientId) => {
+        let consent
         try {
-            // DB Client retrieves the consent
-            const consent = await this.dbClient.getConsentByPatientId(patientId)
-
-            // Service validates the consent
-            const validationResult = this.isConsentValid(consent)
-
-            return {
-                consent: consent,
-                ...validationResult
-            }
+            consent = await this.dbClient.getConsentByPatientId(patientId)
         } catch (error) {
-            console.error('[CONSENT SERVICE] Error checking consent for patient:', error.message)
-            throw error
+            throw new AppError('No consent for given Patient', 404)
         }
+
+        const validationResult = this.isConsentValid(consent)
+        if (!validationResult.isValid) {
+            throw new AppError(validationResult.reason, 400)
+        }
+
+        return validationResult.consent
     }
 }
 

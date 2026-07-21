@@ -128,36 +128,21 @@ class Handler {
         try {
             const patientId = req.params.patientId
 
-            // Step 1: Handler validates HTTP parameters
             if (!patientId) {
                 return res.status(400).json({ error: "Patient ID is required" })
             }
 
-            // Step 2: DB Client checks if patient exists
-            /*const patient = await this.dataBaseClient.getPatientByDbId(patientId)
-            if (!patient) {
-                return res.status(404).json({ error: "Patient not found" })
-            }*/
+            const consent = await this.consentService.checkConsentForPatient(patientId)
 
-            // Step 3: Service retrieves and validates consent
-            const checkResult = await this.consentService.checkConsentForPatient(patientId)
-
-            // Step 4: Handler returns appropriate response based on validation result
-            if (checkResult.isValid) {
-                return res.status(200).json({
-                    message: "Valid consent found",
-                    consent: checkResult.consent
-                })
-            } else {
-                return res.status(404).json({
-                    message: "No valid consent found",
-                    reason: checkResult.reason,
-                    consent: checkResult.consent
-                })
-            }
+            return res.status(200).json({
+                message: "Valid consent found",
+                consent
+            })
         } catch (error) {
             console.error("[HANDLER] Error checking consent:", error.message)
-            return res.status(500).json({ error: error.message || "Failed to check consent" })
+            return res.status(error.statusCode || 500).json({
+                error: error.message || "Failed to check consent"
+            })
         }
     }
 
@@ -178,24 +163,13 @@ class Handler {
      */
     createConsent = async (req, res) => {
         try {
-            // Step 1: Handler receives and validates HTTP request
-            if (!req.body) {
-                return res.status(400).json({ error: "Request body is required" })
-            }
-
-            // Step 2: Service transforms request body into schema format and validates
-            const consentSchemaData = this.consentService.buildConsentSchema(req.body)
-
-            // Step 3: DB Client persists the consent to database
-            await this.consentService.dbClient.saveConsent(consentSchemaData)
-            
-            return res.status(201).json({ 
-                message: "Consent created successfully",
-                consentId: consentSchemaData.consentId
+            const consent = await this.consentService.createConsent(req.body)
+            return res.status(201).json({
+                message: "Consent successfully created",
+                consent: consent
             })
         } catch (error) {
-            console.error("[HANDLER] Error creating consent:", error.message)
-            return res.status(500).json({ error: error.message || "Failed to create consent" })
+            return res.status(error.statusCode || 500).json({ error: error.message })
         }
     }
 }

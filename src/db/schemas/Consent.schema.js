@@ -54,19 +54,16 @@ const consentSchema = new mongoose.Schema({
             ]
         }
     ],
-    decision: { 
+    decision: {
         type: String, // "permit" or "deny"
         required: true
     },
-    provision: {
-        type: [
-            {
-                period: {
-                    start: Date, // "1964-01-01"
-                    end: Date // "2019-01-01"
-                }
-            }
-        ],
+    period: {
+        type: {
+            _id: false,
+            start: Date, // "1964-01-01"
+            end: Date // "2019-01-01"
+        },
         required: true
     }
 })

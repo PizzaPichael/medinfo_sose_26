@@ -132,7 +132,7 @@ class DataBaseClient {
      */
     getConsentByPatientId = async (patientId) => {
         try {
-            return await Consent.findOne({ 'subject.reference': `Patient/${patientId}` })
+            return await Consent.findOne({ 'subject.reference': `Patient/${patientId}` }).lean()
         } catch (e) {
             console.error('[DB] Error getting consent by patient ID...', e)
             throw new Error(`Database error: ${e.message}`)
