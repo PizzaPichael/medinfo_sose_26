@@ -18,18 +18,20 @@ class Handler {
      * Inspired by: https://generate-random.org/jwt-tokens/javascript
      */
     authenticateJWT = (req, res, next) => {
-        const token = req.headers.authorization?.split(' ')[1]; // Bearer token
+        const auth = req.headers.authorization || '';
+        const match = auth.match(/^Bearer\s+(.+)$/i);
+        const token = match?.[1];
 
         if (!token) {
-            return res.sendStatus(401).json({ message: 'Missing JWT token' })
+            return res.status(401).json({ message: 'Missing JWT token' });
         }
 
         try {
             const user = this.authenticator.verifyToken(token);
             req.user = user;
-            next();
-        } catch (error) {
-            return res.sendStatus(403).json({ message: 'Invalid JWT token' });
+            return next();
+        } catch (err) {
+            return res.status(403).json({ message: 'Invalid JWT token' });
         }
     };
 
@@ -75,9 +77,9 @@ class Handler {
         try {
             const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
 
-            res.status(200).json({ 
+            res.status(200).json({
                 message: 'registerPatient request successfull',
-                'patientId':  registeredPatientId
+                'patientId': registeredPatientId
             })
         }
         catch (e) {
@@ -98,7 +100,7 @@ class Handler {
         //TBD remove or move to other service
         try {
             const patientCreated = await this.patRegService.createPatient(req.body)
-            res.status(200).json({message: 'Patient successfully created'})
+            res.status(200).json({ message: 'Patient successfully created' })
         }
         catch (e) {
             console.log('[HANDLER]: ', e)

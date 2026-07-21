@@ -2,21 +2,24 @@
 
 ## 0. Setup Environment Variables
 
-Generate certificate and private key:
+Generate the RSA keypair (no OpenSSL needed):
 
 ```bash
-mkcert <IP-Address> localhost
+node ./src/auth/gen-jwt-keys.mjs
 ```
 
-Add the generated certificate and key to your `.env` file in the auth folder:
+This creates:
+- `private.pem`
+- `public.pem`
 
-> **WICHTIG**\
-> Make sure that the .pem content gets pasted in one line, replace newlines with \n if necessary.
+Add them to your `.env` **in `src/auth/`**:
 
 ```env
-PUBLIC_KEY=<path-or-certificate-content>
-PRIVATE_KEY=<path-or-private-key-content>
+PRIVATE_KEY_PATH=private.pem
+PUBLIC_KEY_PATH=public.pem
 ```
+
+Then make sure your `private.pem` and `public.pem` files are located in the same folder (`src/auth/`) as your `.env`.
 
 Also add user data to your `.env` like this:
 ```env

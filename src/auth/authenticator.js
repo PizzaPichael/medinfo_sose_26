@@ -1,14 +1,25 @@
 import jwt from 'jsonwebtoken';
+import fs from 'node:fs';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import AppError from '../errors/AppError.js';
 
-const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.env');
-dotenv.config({ path: envPath });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const publicKey = process.env.PUBLIC_KEY;
-const privateKey = process.env.PRIVATE_KEY;
+// load .env from this same folder (src/auth), or change the path if your .env is elsewhere
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+const privateKeyPath = path.resolve(__dirname, process.env.PRIVATE_KEY_PATH);
+const publicKeyPath  = path.resolve(__dirname, process.env.PUBLIC_KEY_PATH);
+
+if (!process.env.PRIVATE_KEY_PATH || !process.env.PUBLIC_KEY_PATH) {
+  throw new AppError('JWT key paths missing in .env', 500);
+}
+
+const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+const publicKey  = fs.readFileSync(publicKeyPath, 'utf8');
 const ISSUER = 'http://localhost:3000';
 const AUDIENCE = 'http://localhost:3000';
 
@@ -42,7 +53,7 @@ class Authenticator {
     generateToken(payload) {
         try {
             const token = jwt.sign(payload, privateKey, {
-                algorithm: 'HS256',
+                algorithm: 'RS256',
                 expiresIn: '1h',
                 issuer: ISSUER,
                 audience: AUDIENCE
@@ -56,7 +67,11 @@ class Authenticator {
 
     verifyToken(token) {
         try {
-            const decoded = jwt.verify(token, publicKey);
+            const decoded = jwt.verify(token, publicKey, {
+                algorithms: ['RS256'],
+                issuer: ISSUER,
+                audience: AUDIENCE
+            });
             return decoded;
         } catch (error) {
             console.error('Token verification failed:', error);

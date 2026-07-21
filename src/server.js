@@ -80,6 +80,17 @@ import swaggerSpec from './swagger.js'
  *           type: array
  *           items:
  *             type: object
+ *     AuthenticatedPatientRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - patient
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: JWT zur Authentifizierung
+ *         patient:
+ *           $ref: '#/components/schemas/Patient'
  */
 
 /**
@@ -95,8 +106,14 @@ class Server {
         this.app.use(express.json())
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
         this.app.use((req, res, next) => {
-            if (req.path === '/ping' || req.path === '/getCertificate' || req.path === '/login') {
+            if (req.path === '/ping' || req.path === '/login') {
                 return next()
+            }
+
+            if (req.body?.token) {
+                req.headers.authorization = `Bearer ${req.body.token}`
+            } else {
+                return res.status(401).json({ error: 'Authorization token required' })
             }
             return handler.authenticateJWT(req, res, next)
         })
@@ -110,52 +127,6 @@ class Server {
      * @param {*} handler the handler, whose functions the api endpoints should be wired to
      */
     #bindRoutes = (handler) => {
-        /**
-         * @openapi
-         * /registerPatient:
-         *   post:
-         *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
-         *     requestBody:
-         *       required: true
-         *       description: Der Patient selbst als Body, muss mind. ein name-Element mit use "official" enthalten
-         *       content:
-         *         application/json:
-         *           schema:
-         *             type: object
-         *             properties:
-         *               token:
-         *                 type: string
-         *                 description: JWT-Token zur Authentifizierung
-         *               patientJson:
-         *                 type: object
-         *                 description: Patient-Ressource nach dem Patient-Schema
-         *             $ref: '#/components/schemas/Patient'
-         *     responses:
-         *       200:
-         *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
-         *         content:
-         *           application/json:
-         *             schema:
-         *               type: object
-         *               properties:
-         *                 message:
-         *                   type: string
-         *       401:
-         *         description: Ungültiges Token
-         *                 patientId:
-         *                   type: string
-         *       default:
-         *         description: Fehler bei der lokalen DB-Abfrage (Statuscode je nach AppError, sonst 500)
-         *         content:
-         *           application/json:
-         *             schema:
-         *               type: object
-         *               properties:
-         *                 error:
-         *                   type: string
-         */
-        this.app.post('/registerPatient', handler.registerPatient)
-
         /**
          * @openapi
          * /ping:
@@ -210,6 +181,42 @@ class Server {
 
         /**
          * @openapi
+         * /registerPatient:
+         *   post:
+         *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
+         *     requestBody:
+         *       required: true
+         *       description: Der Patient selbst als Body, muss mind. ein name-Element mit use "official" enthalten
+         *       content:
+         *         application/json:
+         *           schema:
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
+         *     responses:
+         *       200:
+         *         description: Eindeutiger lokaler Patient gefunden, Registrierung akzeptiert
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         *                 patientId:
+         *                   type: string
+         *       default:
+         *         description: Fehler bei der lokalen DB-Abfrage (Statuscode je nach AppError, sonst 500)
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 error:
+         *                   type: string
+         */
+        this.app.post('/registerPatient', handler.registerPatient)
+
+        /**
+         * @openapi
          * /createPatient:
          *   post:
          *     summary: Legt einen neuen Patienten in der lokalen DB an
@@ -219,7 +226,7 @@ class Server {
          *       content:
          *         application/json:
          *           schema:
-         *             $ref: '#/components/schemas/Patient'
+         *             $ref: '#/components/schemas/AuthenticatedPatientRequest'
          *     responses:
          *       200:
          *         description: Patient erfolgreich angelegt
