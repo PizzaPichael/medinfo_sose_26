@@ -184,19 +184,6 @@ class Server {
 
         /**
          * @openapi
-         * /getCertificate:
-         *   get:
-         *     tags:
-         *       - Authentication
-         *     summary: Gibt das JWT-Zertifikat zurück um JWT-Token zu generieren
-         *     responses:
-         *       200:
-         *         description: JWT-Zertifikat zurückgegeben
-         */
-        this.app.get('/getCertificate', handler.getCertificate)
-
-        /**
-         * @openapi
          * /login:
          *   post:
          *     tags:

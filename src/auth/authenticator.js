@@ -63,11 +63,6 @@ class Authenticator {
             throw new AppError('Invalid token', 401);
         }
     }
-
-    // Load the public key from .env
-    getCertificate() {
-        return publicKey;
-    }
 }
 
 export default Authenticator

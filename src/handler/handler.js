@@ -43,16 +43,6 @@ class Handler {
     }
 
     /**
-     * Function to get the public key for JWT verification.
-     * @param {*} req API endpoint input
-     * @param {*} res Endpoint response
-     */
-    getCertificate = (req, res) => {
-        const cert = this.authenticator.getCertificate()
-        res.status(200).json({ certificate: cert })
-    }
-
-    /**
      * Function to log in a user and generate a JWT token.
      * @param {*} req API endpoint input
      * @param {*} res Endpoint response
