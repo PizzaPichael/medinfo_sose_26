@@ -38,8 +38,29 @@ class DataBaseClient {
     getPatientByFilter = async (filterAttributes) => {
         console.log('[DB] getPatientByFilter called')
         try {
-            return await Patient.find(filterAttributes).lean()  // .lean() → plain objects statt Mongoose-docs
-        } 
+            // Übersetzt FHIR-Suchparameter-Namen in die lokalen Mongo-Feldpfade.
+            // Attribute ohne Eintrag werden unverändert als Feldname übernommen (z.B. gender, active).
+            const fhirToMongoField = {
+                family: 'name.family',
+                given: 'name.given',
+                birthdate: 'birthDate',
+                identifier: 'identifier.value',
+                telecom: 'telecom.value',
+                'address-use': 'address.use',
+                'address-city': 'address.city',
+                'address-state': 'address.state',
+                'address-postalcode': 'address.postalCode',
+                'address-country': 'address.country',
+                language: 'communication.language.coding.code'
+            }
+            const mongoFilter = {}
+            for (const [key, value] of Object.entries(filterAttributes)) {
+                mongoFilter[fhirToMongoField[key] ?? key] = value
+            }
+            const result = await Patient.find(mongoFilter).lean()  // .lean() → plain objects statt Mongoose-docs
+            console.log(result.length != 0 ? '[DB] Patient found' : '[DB] Patient not found')
+            return result
+        }
         catch (e){
             console.log('[DB] Error getting patient by filter...', e)
             throw new AppError(`[DB] Error getting patient by filter... MongooseError: ${e}`, 500)
