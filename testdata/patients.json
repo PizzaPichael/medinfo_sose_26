@@ -1,0 +1,122 @@
+[
+  {
+    "resourceType": "Patient",
+    "id": "patient-1",
+    "identifier": [
+      {
+        "system": "http://hospital.example.org/mrn",
+        "value": "MRN-0001"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "Ramirez",
+        "given": [
+          "Carlos"
+        ]
+      }
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "413-555-0100",
+        "use": "home"
+      }
+    ],
+    "gender": "male",
+    "birthDate": "1974-05-12",
+    "address": [
+      {
+        "use": "home",
+        "line": [
+          "125 Community Way"
+        ],
+        "city": "Springfield",
+        "state": "MA",
+        "postalCode": "01109",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "resourceType": "Patient",
+    "id": "patient-2",
+    "identifier": [
+      {
+        "system": "http://hospital.example.org/mrn",
+        "value": "MRN-0001"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "Ramirez",
+        "given": [
+          "Carlos"
+        ]
+      }
+    ],
+    "telecom": [
+      {
+        "system": "email",
+        "value": "carlos.ramirez@example.com",
+        "use": "work"
+      }
+    ],
+    "gender": "male",
+    "birthDate": "1974-05-12",
+    "address": [
+      {
+        "use": "home",
+        "line": [
+          "125 Community Way"
+        ],
+        "city": "Springfield",
+        "state": "MA",
+        "postalCode": "01109",
+        "country": "US"
+      }
+    ]
+  },
+  {
+    "resourceType": "Patient",
+    "id": "patient-3",
+    "identifier": [
+      {
+        "system": "http://hospital.example.org/mrn",
+        "value": "MRN-9999"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "Nakamura",
+        "given": [
+          "Yuki"
+        ]
+      }
+    ],
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "206-555-0177",
+        "use": "mobile"
+      }
+    ],
+    "gender": "female",
+    "birthDate": "1990-11-23",
+    "address": [
+      {
+        "use": "home",
+        "line": [
+          "88 Rainier Ave"
+        ],
+        "city": "Seattle",
+        "state": "WA",
+        "postalCode": "98101",
+        "country": "US"
+      }
+    ]
+  }
+]

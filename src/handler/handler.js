@@ -1,21 +1,15 @@
+/**
+ * Übersetzt HTTP-Requests in Aufrufe an die Services und die Service-Ergebnisse zurück in HTTP-Responses.
+ * Enthält selbst keine fachliche Logik.
+ */
 class Handler {
 
     /**
-     * Constructor
-     * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
+     * @param {*} patientRegistrationService - Service für Patientenregistrierung, an den registerPatient/createPatient delegieren.
      */
-    constructor(localDbClient, fhirClient, patientRegistrationService) {
-        this.dataBaseClient = localDbClient
-        this.fhirClient = fhirClient
+    constructor(patientRegistrationService) {
         this.patRegService = patientRegistrationService
         console.log('[HANDLER] Created...')
-    }
-
-    /**
-     * Function for ending the connection to the local DB if needed.
-     */
-    endDbConenction = async () => {
-        await this.databaseClient.endConnection()
     }
 
     /**
@@ -24,18 +18,51 @@ class Handler {
      * @param {*} res Endpoint response
      */
     test = (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
         res.status(203).json({ message: 'test Endpoint called' })
     }
 
     /**
-     * Function to register a patient that shwos up at the frontdesk.
-     * @param {*} req API Endpoint input
-     * @param {*} res Endpoint response
+     * Function to pass registerPatient api call to the patienti-registration-service
+     * @param {*} req API Endpoint input object
+     * @param {*} res Endpoint response object
+     * TBD add returnvalues
      */
-    registerPatient = (req, res) => {
-        const patientJson = req.body.patientJson // Der Input ist entsprechend des PatientSchema formatiert
+    registerPatient = async (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        const patientToRegisterJson = req.body //.patientJson // Der Input ist entsprechend des PatientSchema formatiert
+        try {
+            const registeredPatientId = await this.patRegService.registerPatient(patientToRegisterJson)
 
-        res.status(200).json({ message: 'registerPatient request accepted' })
+            res.status(200).json({ 
+                message: 'registerPatient request successfull',
+                'patientId':  registeredPatientId
+            })
+        }
+        catch (e) {
+            console.log('[HANDLER]: ', e)
+            // Returns either the status code of the AppError Instance or defaults to a 500 status
+            return res.status(e.statusCode ?? 500).json({ error: e.message })
+        }
+    }
+
+    /**
+     * Triggers creation of the patient in the registrationService
+     * @param {*} req API Endpoint input object
+     * @param {*} res Endpoint response object
+     * TBD add returnvalues
+     */
+    createPatient = async (req, res) => {
+        console.log(`[HANDLER] ${req.method} ${req.originalUrl} called`)
+        //TBD remove or move to other service
+        try {
+            const patientCreated = await this.patRegService.createPatient(req.body)
+            res.status(200).json({message: 'Patient successfully created'})
+        }
+        catch (e) {
+            console.log('[HANDLER]: ', e)
+            return res.status(e.statusCode ?? 500).json({ error: e.message })
+        }
     }
 }
 

@@ -1,5 +1,8 @@
 import swaggerJsdoc from 'swagger-jsdoc'
 
+/**
+ * Erzeugt die OpenAPI-Spezifikation aus den @openapi-JSDoc-Kommentaren in den in apis gelisteten Dateien.
+ */
 const options = {
     definition: {
         openapi: '3.0.0',
