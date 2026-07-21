@@ -4,7 +4,14 @@ import swaggerSpec from './swagger.js'
 
 /**
  * @openapi
+ * security:
+ *   - bearerAuth: []
  * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  *   schemas:
  *     Patient:
  *       type: object
@@ -80,17 +87,155 @@ import swaggerSpec from './swagger.js'
  *           type: array
  *           items:
  *             type: object
- *     AuthenticatedPatientRequest:
+ *     LoginRequest:
  *       type: object
  *       required:
- *         - token
- *         - patient
+ *         - username
+ *         - password
  *       properties:
- *         token:
+ *         username:
  *           type: string
- *           description: JWT zur Authentifizierung
- *         patient:
- *           $ref: '#/components/schemas/Patient'
+ *           description: Der Benutzername des Benutzers
+ *         password:
+ *           type: string
+ *           description: Das Passwort des Benutzers
+ *     AuthenticatedPatientRequest:
+ *       type: object
+ *       allOf:
+ *         - $ref: '#/components/schemas/Patient'
+ *     Reference:
+ *       type: object
+ *       required:
+ *         - reference
+ *       properties:
+ *         reference:
+ *           type: string
+ *           description: Referenz auf ein anderes FHIR-Resource, z.B. Patient/123
+ *         type:
+ *           type: string
+ *           description: Optionaler Ressourcentyp
+ *         display:
+ *           type: string
+ *           description: Lesbarer Text zur Referenz
+ *     ConsentProvision:
+ *       type: object
+ *       properties:
+ *         type:
+ *           type: string
+ *           description: Art der Berechtigung, z.B. "permit" oder "deny"
+ *         period:
+ *           type: object
+ *           properties:
+ *             start:
+ *               type: string
+ *               format: date-time
+ *             end:
+ *               type: string
+ *               format: date-time
+ *         actor:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               role:
+ *                 type: object
+ *                 properties:
+ *                   text:
+ *                     type: string
+ *               reference:
+ *                 $ref: '#/components/schemas/Reference'
+ *         action:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               coding:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     system:
+ *                       type: string
+ *                     code:
+ *                       type: string
+ *                     display:
+ *                       type: string
+ *     Consent:
+ *       type: object
+ *       required:
+ *         - status
+ *         - decision
+ *         - subject
+ *       properties:
+ *         resourceType:
+ *           type: string
+ *           example: Consent
+ *         id:
+ *           type: string
+ *         status:
+ *           type: string
+ *           description: Einwilligungsstatus, z.B. "active"
+ *         decision:
+ *           type: string
+ *           description: permit oder deny
+ *           enum:
+ *             - permit
+ *             - deny
+ *         scope:
+ *           type: object
+ *           properties:
+ *             coding:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   system:
+ *                     type: string
+ *                   code:
+ *                     type: string
+ *                   display:
+ *                     type: string
+ *         category:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               coding:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     system:
+ *                       type: string
+ *                     code:
+ *                       type: string
+ *                     display:
+ *                       type: string
+ *         subject:
+ *           $ref: '#/components/schemas/Reference'
+ *         provision:
+ *           $ref: '#/components/schemas/ConsentProvision'
+ *         organization:
+ *           $ref: '#/components/schemas/Reference'
+ *         dateTime:
+ *           type: string
+ *           format: date-time
+ *     AuthenticatedConsentRequest:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *           description: Einwilligungsstatus, z.B. "active"
+ *         decision:
+ *           type: string
+ *           description: permit oder deny
+ *         provision:
+ *           type: array
+ *           items:
+ *             type: object
+ *         subject:
+ *           type: object
+ *           description: Referenz auf Patient, z.B. Patient/123
  */
 
 /**
@@ -110,11 +255,14 @@ class Server {
                 return next()
             }
 
-            if (req.body?.token) {
-                req.headers.authorization = `Bearer ${req.body.token}`
-            } else {
+            const authHeader = req.headers.authorization
+            const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : req.body?.token
+
+            if (!token) {
                 return res.status(401).json({ error: 'Authorization token required' })
             }
+
+            req.headers.authorization = `Bearer ${token}`
             return handler.authenticateJWT(req, res, next)
         })
         this.httpServer = null
@@ -133,6 +281,7 @@ class Server {
          *   get:
          *     deprecated: true
          *     summary: Testet, ob der Server erreichbar ist (temporärer Debug-Endpoint, TBD Entfernen am Ende)
+         *     security: []
          *     responses:
          *       203:
          *         description: Server antwortet
@@ -159,20 +308,14 @@ class Server {
          *   post:
          *     tags:
          *       - Authentication
+         *     security: []
          *     summary: Erstellt ein JWT-Token für einen Benutzer
          *     requestBody:
          *       required: true
          *       content:
          *         application/json:
          *           schema:
-         *             type: object
-         *             properties:
-         *               username:
-         *                 type: string
-         *                 description: Der Benutzername des Benutzers
-         *               password:
-         *                 type: string
-         *                 description: Das Passwort des Benutzers
+         *             $ref: '#/components/schemas/LoginRequest'
          *     responses:
          *       200:
          *         description: JWT-Token zurückgegeben
@@ -183,6 +326,8 @@ class Server {
          * @openapi
          * /registerPatient:
          *   post:
+         *     security:
+         *       - bearerAuth: []
          *     summary: Sucht einen Patienten anhand des offiziellen Namens lokal und registriert ihn am Empfang
          *     requestBody:
          *       required: true
@@ -219,6 +364,8 @@ class Server {
          * @openapi
          * /createPatient:
          *   post:
+         *     security:
+         *       - bearerAuth: []
          *     summary: Legt einen neuen Patienten in der lokalen DB an
          *     requestBody:
          *       required: true
@@ -243,6 +390,8 @@ class Server {
          * @openapi
          * /consent/{patientId}:
          *   get:
+         *     security:
+         *       - bearerAuth: []
          *     summary: Prüft die Einwilligung eines Patienten
          *     parameters:
          *       - in: path
@@ -275,27 +424,15 @@ class Server {
          * @openapi
          * /consent:
          *   post:
+         *     security:
+         *       - bearerAuth: []
          *     summary: Erstellt eine neue Einwilligung
          *     requestBody:
          *       required: true
          *       content:
          *         application/json:
          *           schema:
-         *             type: object
-         *             properties:
-         *               status:
-         *                 type: string
-         *                 description: 'Einwilligungsstatus, z.B. "active"'
-         *               decision:
-         *                 type: string
-         *                 description: 'permit oder deny'
-         *               provision:
-         *                 type: array
-         *                 items:
-         *                   type: object
-         *               subject:
-         *                 type: object
-         *                 description: 'Referenz auf Patient, z.B. Patient/123'
+         *             $ref: '#/components/schemas/AuthenticatedConsentRequest'
          *     responses:
          *       201:
          *         description: Einwilligung erfolgreich erstellt
