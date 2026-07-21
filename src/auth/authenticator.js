@@ -40,6 +40,16 @@ class Authenticator {
         return token;
     }
 
+    verifyToken(token) {
+        try {
+            const decoded = jwt.verify(token, publicKey);
+            return decoded;
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            throw new Error('Invalid token');
+        }
+    }
+
     // Load the public key from .env
     getCertificate() {
         return publicKey;

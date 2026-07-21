@@ -27,14 +27,16 @@ class Handler {
         const token = req.headers.authorization?.split(' ')[1]; // Bearer token
 
         if (!token) {
-            return res.sendStatus(401);
+            return res.sendStatus(401).json({ message: 'Missing JWT token' })
         }
 
-        jwt.verify(token, SECRET_KEY, (err, user) => {
-            if (err) return res.sendStatus(403);
+        try {
+            const user = this.authenticator.verifyToken(token);
             req.user = user;
             next();
-        });
+        } catch (error) {
+            return res.sendStatus(403).json({ message: 'Invalid JWT token' });
+        }
     };
 
     /**
