@@ -11,12 +11,16 @@ class Server {
         this.app = express()
         this.app.use(express.json())
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+        this.app.use((req, res, next) => {
+            if (req.path === '/test' || req.path === '/getCertificate' || req.path === '/login') {
+                return next()
+            }
+            return handler.authenticateJWT(req, res, next)
+        })
         this.httpServer = null
         this.#bindRoutes(handler)
         console.log('[SERVER] Created...')
-    } 
-
-    // app.use(SecurityVerification)
+    }
 
     /**
      * Wires HTTP-routes with handler-functions
@@ -35,6 +39,9 @@ class Server {
          *           schema:
          *             type: object
          *             properties:
+         *               token:
+         *                 type: string
+         *                 description: JWT-Token zur Authentifizierung
          *               patientJson:
          *                 type: object
          *                 description: Patient-Ressource nach dem Patient-Schema
@@ -48,6 +55,8 @@ class Server {
          *               properties:
          *                 message:
          *                   type: string
+         *       401:
+         *         description: Ungültiges Token
          */
         this.app.post('/registerPatient', handler.registerPatient)
 
@@ -68,6 +77,53 @@ class Server {
          *                   type: string
          */
         this.app.get('/test', handler.test)
+
+        /**
+        * @openapi
+        * tags:
+        *   - name: Authentication
+        *     description: Endpoints for user authentication and JWT handling
+        */
+
+        /**
+         * @openapi
+         * /getCertificate:
+         *   get:
+         *     tags:
+         *       - Authentication
+         *     summary: Gibt das JWT-Zertifikat zurück um JWT-Token zu generieren
+         *     responses:
+         *       200:
+         *         description: JWT-Zertifikat zurückgegeben
+         */
+        this.app.get('/getCertificate', handler.getCertificate)
+
+        /**
+         * @openapi
+         * /login:
+         *   post:
+         *     tags:
+         *       - Authentication
+         *     summary: Erstellt ein JWT-Token für einen Benutzer
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               userId:
+         *                 type: string
+         *                 description: Die ID des Benutzers
+         *               username:
+         *                 type: string
+         *                 description: Der Benutzername des Benutzers
+         *     responses:
+         *       200:
+         *         description: JWT-Token zurückgegeben
+         */
+        this.app.post('/login', handler.login)
+
         console.log('[SERVER] Routes bound...')
     }
 

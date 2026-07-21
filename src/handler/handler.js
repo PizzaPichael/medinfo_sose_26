@@ -4,10 +4,11 @@ class Handler {
      * Constructor
      * @param {*} localDbClient The dataBaseClient thats responsible for talking to the local DB
      */
-    constructor(localDbClient, fhirClient, patientRegistrationService) {
+    constructor(localDbClient, fhirClient, patientRegistrationService, authenticator) {
         this.dataBaseClient = localDbClient
         this.fhirClient = fhirClient
         this.patRegService = patientRegistrationService
+        this.authenticator = authenticator
         console.log('[HANDLER] Created...')
     }
 
@@ -19,12 +20,48 @@ class Handler {
     }
 
     /**
+     * Middleware function to authenticate JWT tokens in incoming requests.
+     * Inspired by: https://generate-random.org/jwt-tokens/javascript
+     */
+    authenticateJWT = (req, res, next) => {
+        const token = req.headers.authorization?.split(' ')[1]; // Bearer token
+
+        if (!token) {
+            return res.sendStatus(401);
+        }
+
+        jwt.verify(token, SECRET_KEY, (err, user) => {
+            if (err) return res.sendStatus(403);
+            req.user = user;
+            next();
+        });
+    };
+
+    /**
      * Test function, wired to the /test endpoint 
      * @param {*} req API endpoint input
      * @param {*} res Endpoint response
      */
     test = (req, res) => {
         res.status(203).json({ message: 'test Endpoint called' })
+    }
+
+    /**
+     * Function to get the public key for JWT verification.
+     * @param {*} req API endpoint input
+     * @param {*} res Endpoint response
+     */
+    getCertificate = (req, res) => {
+        const cert = this.authenticator.getCertificate()
+        res.status(200).json({ certificate: cert })
+    }
+
+    login = (req, res) => {
+        const { user_id, username } = req.body;
+        const role = 'user';
+        const payload = this.authenticator.createTokenPayload(user_id, username, role);
+        const token = this.authenticator.generateToken(payload);
+        res.status(200).json({ token: token });
     }
 
     /**
